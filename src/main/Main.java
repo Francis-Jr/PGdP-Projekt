@@ -18,7 +18,11 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Main {
 	
+	private static final long COMPUTE_INTERVALL = (long) (1e9);
+	
 	private static boolean menu = false;
+	
+	private static long last = System.nanoTime(), delta = 0, computeCounter = 0;
 	
 	public static void main(String[] args){
 		Terminal terminal = TerminalFacade.createSwingTerminal();
@@ -26,58 +30,50 @@ public class Main {
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		
+		playLevel("level_small.properties",terminal);
 		
 		terminal.exitPrivateMode();
 	}
 	
 	
 	public static void playLevel(String path, Terminal terminal){
-		Level level = new Level(path);
+		Level level = new Level(terminal, path);
 		
 		while(terminal.getTerminalSize().getColumns() > 0){ //break; nicht ohne ersatz entfernen!
 			computeDelta();
-			if(menu){
-				if(computeMenu()) break;
-				paintMenu();
-			}
-			else{
-				computeLevel();
-				paintLevel();
+			computeCounter = computeCounter + delta;
+			if(computeCounter > COMPUTE_INTERVALL){
+				if(menu){
+					if(computeMenu(terminal)) break;
+				}
+				else{
+					computeLevel(terminal,level);
+				}
+				try {
+					Thread.sleep(3);
+				} catch (InterruptedException e) {e.printStackTrace();}
 			}
 		}
-		
 	}
 
-	
-	private static void paintLevel() {
-		// TODO Auto-generated method stub
-	}
-
-
-	private static void computeLevel() {
-		// TODO Auto-generated method stub
-		
-	}
-
-
-	private static void paintMenu() {
-		// TODO Auto-generated method stub
-		
+	private static void computeLevel(Terminal terminal, Level level) {
+		level.moveDynamicTraps();
+		System.out.println("computing Level");
 	}
 
 	/**
 	 * 
 	 * @return true if player wants to quit
 	 */
-	private static boolean computeMenu() {
+	private static boolean computeMenu(Terminal terminal) {
 		// TODO Auto-generated method stub
 		return true;
 	}
 
 
 	private static void computeDelta() {
-		// TODO Auto-generated method stub
-		
+		delta = System.nanoTime() - last;
+		last = System.nanoTime();
 	}
 	
 }

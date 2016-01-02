@@ -5,47 +5,130 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Vector;
+
+import main.T;
+
+import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Level {
-
-	private Properties objects;
+	
+	private Terminal terminal;
+	
+	private int[][] objects;
+	private Vector<DynamicTrap> dynTraps = new Vector<DynamicTrap>();
+	private int levelWidth, levelHeight;
+	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
+	private int playerX, playerY;
 	
 	public int getObjectAt(int x , int y){
-		return Integer.parseInt(objects.getProperty(x + "," + y));
+		return objects[x][y];
 	}
 	
 	public int getWidth(){
-		return Integer.parseInt(objects.getProperty("Width"));
+		return levelWidth;
 	}
 	
 	public int getHeight(){
-		return Integer.parseInt(objects.getProperty("Height"));
+		return levelHeight;
 	}
 	
 	public void moveDynamicTraps(){
-		//TODO implement
+		for(DynamicTrap trap : dynTraps){
+			setObject(6, trap.getPositionX(), trap.getPositionY());
+			trap.move(isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
+					isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
+					isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
+					isWalkable(trap.getPositionX(),trap.getPositionY()-1));
+			setObject(4,trap.getPositionX(),trap.getPositionY());
+		}
 	}
 	
-	public static void movePlayerUp(){
-		//TODO implement
+	private boolean isWalkable(int positionX, int positionY) {
+		if(positionX < 0 || positionX >= levelWidth || positionY < 0 || positionY >= levelHeight) return false;
+		switch(objects[positionX][positionY]){
+		case 1:
+		case 6:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	private void setObject(int obj, int positionX, int positionY) {
+		objects[positionX][positionY] = obj;
+		printInTerminal(positionX , positionY);
+	}
+
+	/**
+	 * 
+	 * @param positionX position relativ zum Level
+	 * @param positionY position relativ zum Level
+	 */
+	private void printInTerminal(int positionX, int positionY){
+		if(positionX >= levelWidth || positionY >= levelHeight) return;
+		T.p("printing " + getChar(objects[positionX][positionY])); //TODO testprint
+		terminal.applyForegroundColor(getColor(objects[positionX][positionY]));
+		terminal.moveCursor(positionX - windowPositionX, positionY - windowPositionY);
+		terminal.putCharacter(getChar(objects[positionX][positionY]));
 	}
 	
-	public static void movePlayerDown(){
-		//TODO implement
+	private char getChar(int obj){
+		switch(obj){
+		case 0: return 'X'; //wand
+		case 2: return 'E'; //Ausgang
+		case 3: return '#'; //static trap
+		case 4: return '+'; //dynamic trap
+		case 5: return '$'; //Schluessel
+		case 7: return 'ö'; //Player
+		case 1:				//eingang
+		case 6: 			//leer
+		default: return ' ';
+		}
+	}
+
+	private Color getColor(int obj){
+		switch(obj){
+		case 0: return Color.WHITE; //wand
+		case 2: return Color.BLUE; 	//Ausgang
+		case 3: return Color.RED; 	//static trap
+		case 4: return Color.RED; 	//dynamic trap
+		case 5: return Color.YELLOW;//Schluessel
+		case 7: return Color.GREEN;	//Player
+		case 1:						//eingang
+		case 6: 					//leer
+		default: return Color.WHITE;
+		}
 	}
 	
-	public static void movePlayerLeft(){
-		//TODO implement
+	public void movePlayerUp(){
+		if(playerY > 0)
+			playerY -= 1;
+		//TODO check for windowBorders
 	}
 	
-	public static void movePlayerRight(){
-		//TODO implement
+	public void movePlayerDown(){
+		if(playerY < levelHeight-1)
+			playerY += 1;
 	}
 	
-	public Level(String path){
-		objects = new Properties();
+	public void movePlayerLeft(){
+		if(playerX > 0)
+			playerX -= 1;
+	}
+	
+	public void movePlayerRight(){
+		if(playerX < levelWidth -1)
+			playerX += 1;
+	}
+	
+	public Level(Terminal terminal, String path){
+		this.terminal = terminal;
 		
-		//InputStream
+		Properties obj = new Properties();
+		
+		//create InputStream
 			BufferedInputStream stream = null;
 			try {
 				stream = new BufferedInputStream(new FileInputStream(path));
@@ -57,18 +140,61 @@ public class Level {
 		
 		//Load Level
 			try {
-				objects.load(stream);
-			} 
-			catch (IOException e) {
-				e.printStackTrace();
-			}
+				obj.load(stream);
+			} catch (IOException e) { e.printStackTrace(); }
 		
 		//Close Stream
 			try {
 				stream.close();
-			} 
-			catch (IOException e) {
-				e.printStackTrace();
+			} catch (IOException e) { e.printStackTrace();}
+			
+		/*	
+		 *  (1) convert Properties to Array AND 
+		 *	(2) find entry and place Player AND 
+		 *  (3) put dynamic Traps in Vector
+		 */
+			levelWidth = Integer.parseInt(obj.getProperty("Width"));
+			levelHeight = Integer.parseInt(obj.getProperty("Height"));
+			objects = new int[levelWidth][levelHeight];
+			for(int x = 0 ; x < objects.length ; x++){
+				for(int y = 0 ; y < objects[x].length ; y++){
+					//(1)
+					try {
+						objects[x][y] = Integer.parseInt(obj.getProperty(x + "," + y));
+					}
+					catch(NumberFormatException e){
+						objects[x][y] = 6;
+					}
+					
+					//(2)
+					if(objects[x][y] == 1){
+						playerX = x; playerY = y;
+					}
+					
+					//(3)
+					else if(objects[x][y] == 4){
+						dynTraps.add(new DynamicTrap(x,y));
+					}
+				}
+			}
+			
+		//Fenstergroesse setzen und Fenster um Player zentrieren
+			windowWidth = terminal.getTerminalSize().getColumns();
+			windowHeight = terminal.getTerminalSize().getRows();
+			windowPositionX = playerX - windowWidth/2;
+			windowPositionY = playerY - windowHeight/2;
+			if(windowPositionX < 0 ) windowPositionX = 0;
+			else if (windowPositionX > levelWidth - windowWidth - 1) windowPositionX = levelWidth - windowWidth - 1;
+			if(windowPositionY < 0 ) windowPositionY = 0;
+			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
+			
+		//Alle zeichen ins Terminal schreiben
+			T.p("wW: " + windowWidth + "   wH: " + windowHeight);
+			T.p("lW: " + levelWidth + "   lH: " + levelHeight);
+			for(int x = windowPositionX ; x < windowPositionX + windowWidth ; x++){
+				for(int y = windowPositionY ; y < windowPositionY + windowHeight ; y++){
+					printInTerminal(x,y);
+				}
 			}
 	}
 }
