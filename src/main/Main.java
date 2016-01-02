@@ -3,6 +3,8 @@ package main;
 import level.Level;
 
 import com.googlecode.lanterna.TerminalFacade;
+import com.googlecode.lanterna.input.Key;
+import com.googlecode.lanterna.input.Key.Kind;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
@@ -18,7 +20,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Main {
 	
-	private static final long COMPUTE_INTERVALL = (long) (1e9);
+	private static final long COMPUTE_INTERVALL = (long) (5e8);
 	
 	private static boolean menu = false;
 	
@@ -43,6 +45,7 @@ public class Main {
 			computeDelta();
 			computeCounter = computeCounter + delta;
 			if(computeCounter > COMPUTE_INTERVALL){
+				computeCounter = 0;
 				if(menu){
 					if(computeMenu(terminal)) break;
 				}
@@ -58,7 +61,12 @@ public class Main {
 
 	private static void computeLevel(Terminal terminal, Level level) {
 		level.moveDynamicTraps();
-		System.out.println("computing Level");
+		Key key = terminal.readInput();
+		if (key == null) return;
+		if(key.getKind().equals(Kind.ArrowUp)) level.movePlayerUp();
+		else if(key.getKind().equals(Kind.ArrowDown)) level.movePlayerDown();
+		else if(key.getKind().equals(Kind.ArrowRight)) level.movePlayerRight();
+		else if(key.getKind().equals(Kind.ArrowLeft)) level.movePlayerLeft();
 	}
 
 	/**

@@ -21,6 +21,8 @@ public class Level {
 	private int levelWidth, levelHeight;
 	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
 	private int playerX, playerY;
+	private boolean hasKey = false;
+	private int livesLeft = 5;
 	
 	public int getObjectAt(int x , int y){
 		return objects[x][y];
@@ -34,17 +36,6 @@ public class Level {
 		return levelHeight;
 	}
 	
-	public void moveDynamicTraps(){
-		for(DynamicTrap trap : dynTraps){
-			setObject(6, trap.getPositionX(), trap.getPositionY());
-			trap.move(isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
-					isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
-					isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
-					isWalkable(trap.getPositionX(),trap.getPositionY()-1));
-			setObject(4,trap.getPositionX(),trap.getPositionY());
-		}
-	}
-	
 	private boolean isWalkable(int positionX, int positionY) {
 		if(positionX < 0 || positionX >= levelWidth || positionY < 0 || positionY >= levelHeight) return false;
 		switch(objects[positionX][positionY]){
@@ -53,6 +44,18 @@ public class Level {
 			return true;
 		default:
 			return false;
+		}
+	}
+
+	private boolean isWalkableForPlayer(int positionX, int positionY) {
+		if(positionX < 0 || positionX >= levelWidth || positionY < 0 || positionY >= levelHeight) return false;
+		switch(objects[positionX][positionY]){
+		case 0:
+			return false;
+		case 2:
+			return hasKey;
+		default:
+			return true;
 		}
 	}
 
@@ -68,7 +71,6 @@ public class Level {
 	 */
 	private void printInTerminal(int positionX, int positionY){
 		if(positionX >= levelWidth || positionY >= levelHeight) return;
-		T.p("printing " + getChar(objects[positionX][positionY])); //TODO testprint
 		terminal.applyForegroundColor(getColor(objects[positionX][positionY]));
 		terminal.moveCursor(positionX - windowPositionX, positionY - windowPositionY);
 		terminal.putCharacter(getChar(objects[positionX][positionY]));
@@ -81,7 +83,7 @@ public class Level {
 		case 3: return '#'; //static trap
 		case 4: return '+'; //dynamic trap
 		case 5: return '$'; //Schluessel
-		case 7: return 'ö'; //Player
+		case 7: return 'ï¿½'; //Player
 		case 1:				//eingang
 		case 6: 			//leer
 		default: return ' ';
@@ -102,27 +104,69 @@ public class Level {
 		}
 	}
 	
-	public void movePlayerUp(){
-		if(playerY > 0)
+	public void moveDynamicTraps(){
+		for(DynamicTrap trap : dynTraps){
+			setObject(6, trap.getPositionX(), trap.getPositionY());
+			trap.move(isWalkable(trap.getPositionX(),trap.getPositionY()-1), 
+					isWalkable(trap.getPositionX()+1,trap.getPositionY()), 
+					isWalkable(trap.getPositionX(),trap.getPositionY()+1), 
+					isWalkable(trap.getPositionX()-1,trap.getPositionY()));
+			setObject(4,trap.getPositionX(),trap.getPositionY());
+		}
+	}
+
+	public void movePlayerUp(){ //TODO player nur als overlay
+		if(playerY > 0 && isWalkableForPlayer(playerX , playerY-1)){
+			setObject(6, playerX , playerY);
 			playerY -= 1;
+			interact();
+			setObject(7, playerX , playerY);
+		}
 		//TODO check for windowBorders
 	}
 	
 	public void movePlayerDown(){
-		if(playerY < levelHeight-1)
+		if(playerY < levelHeight-1 && isWalkableForPlayer(playerX , playerY+1)){
+			setObject(6, playerX , playerY);
 			playerY += 1;
+			interact();
+			setObject(7, playerX , playerY);
+		}
 	}
 	
 	public void movePlayerLeft(){
-		if(playerX > 0)
+		if(playerX > 0 && isWalkableForPlayer(playerX - 1, playerY)){
+			setObject(6, playerX , playerY);
 			playerX -= 1;
+			interact();
+			setObject(7, playerX , playerY);
+		}
 	}
 	
 	public void movePlayerRight(){
-		if(playerX < levelWidth -1)
+		if(playerX < levelWidth -1 && isWalkableForPlayer(playerX +1, playerY)){
+			setObject(6, playerX , playerY);
 			playerX += 1;
+			interact();
+			setObject(7, playerX , playerY);
+		}
 	}
 	
+	private void interact() {
+		switch(objects[playerX][playerY]){
+		case 2: /*win();*/ break;
+		case 3: damage(2); break;
+		case 4: damage(1); break;
+		case 5: hasKey = true; break; //TODO Anzeige Ã¤ndern
+		}
+	}
+
+	private void damage(int i) {
+		livesLeft -= i;
+		if(livesLeft <= 0);
+			//TODO lose()
+	}
+
 	public Level(Terminal terminal, String path){
 		this.terminal = terminal;
 		
@@ -169,6 +213,7 @@ public class Level {
 					//(2)
 					if(objects[x][y] == 1){
 						playerX = x; playerY = y;
+						objects[x][y] = 7;
 					}
 					
 					//(3)
@@ -189,8 +234,6 @@ public class Level {
 			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
 			
 		//Alle zeichen ins Terminal schreiben
-			T.p("wW: " + windowWidth + "   wH: " + windowHeight);
-			T.p("lW: " + levelWidth + "   lH: " + levelHeight);
 			for(int x = windowPositionX ; x < windowPositionX + windowWidth ; x++){
 				for(int y = windowPositionY ; y < windowPositionY + windowHeight ; y++){
 					printInTerminal(x,y);
