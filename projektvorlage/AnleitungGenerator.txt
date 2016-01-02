@@ -1,0 +1,16 @@
+Zweck: ein Level generieren
+
+Voraussetzung: eine Datei namens parameters.txt liegt vor,
+  in der die vorgegebenen Eigenschaften definiert sind
+  (Beispiel siehe Moodle-Seite)
+
+Aufruf auf der Konsole:
+   javac Generate.java  (zum Übersetzen)
+   java Generate        (zum Ausführen)
+
+Effekt:
+   Ein (!) Labyrinth wird erzeugt und in der Datei "level.properties" gespeichert.
+
+
+Anmerkung: Der Generator ist eine eigenständige Anwendung zum Generieren von Labyrinthen. Es ist NICHT vorgesehen, den Generator-Quellcode irgendwo einzubinden.
+(Wer will, kann natürlich den Code umschreiben, um damit in einem Durchlauf mehrere Labyrinthe auf einmal zu erzeugen, oder einfach ein Script schreiben, welches den Generator mehrfach aufruft und den Output in verschiedenen Dateien ablegt.)
