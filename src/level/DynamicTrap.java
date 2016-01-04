@@ -22,6 +22,7 @@ public class DynamicTrap {
 	public void move(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
 		if(!(upPossible || rightPossible || downPossible || leftPossible)) return; //falls keine Bewegung möglich Abbruch 
 		
+		//TODO KI überdenken...
 		//Taktik: 70% Wahrscheinlichkeit Kurs beibehalten; 20% Richtung ändern; 10% umkehren
 		double tactics = Math.random();
 		
@@ -60,7 +61,7 @@ public class DynamicTrap {
 
 	private void moveTurnAround(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
 		if(move(lastDirection + 2, upPossible, rightPossible, downPossible, leftPossible)) return;
-		moveCurve(upPossible, rightPossible, downPossible, leftPossible);
+		moveStraight(upPossible, rightPossible, downPossible, leftPossible);
 	}
 
 	/**

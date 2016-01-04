@@ -20,7 +20,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Main {
 	
-	private static final long COMPUTE_INTERVALL = (long) (5e8);
+	private static final long COMPUTE_INTERVALL = (long) (7e7);
 	
 	private static boolean menu = false;
 	
@@ -40,17 +40,24 @@ public class Main {
 	
 	public static void playLevel(String path, Terminal terminal){
 		Level level = new Level(terminal, path);
+		Key key;
+		Key computeKey = null;
 		
 		while(terminal.getTerminalSize().getColumns() > 0){ //break; nicht ohne ersatz entfernen!
+			key = terminal.readInput();
+			if(key != null) computeKey = key;
+			
 			computeDelta();
 			computeCounter = computeCounter + delta;
+			
 			if(computeCounter > COMPUTE_INTERVALL){
 				computeCounter = 0;
 				if(menu){
 					if(computeMenu(terminal)) break;
 				}
 				else{
-					computeLevel(terminal,level);
+					computeLevel(terminal,level,computeKey);
+					computeKey = null;
 				}
 				try {
 					Thread.sleep(3);
@@ -59,14 +66,24 @@ public class Main {
 		}
 	}
 
-	private static void computeLevel(Terminal terminal, Level level) {
+	private static void computeLevel(Terminal terminal, Level level, Key computeKey) {
+		level.unprintMovingObjects();
+		if (computeKey == null) {
+			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
+		}
+		else if(computeKey.getKind().equals(Kind.ArrowUp)) level.movePlayer(0);
+		else if(computeKey.getKind().equals(Kind.ArrowDown)) level.movePlayer(2);
+		else if(computeKey.getKind().equals(Kind.ArrowRight)) level.movePlayer(1);
+		else if(computeKey.getKind().equals(Kind.ArrowLeft)) level.movePlayer(3);
+		else {
+			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
+			switch(level.getOperationCode(computeKey)){
+			case 1: System.exit(0);
+			case 2: //TODO enter menu
+			}
+		}
+		
 		level.moveDynamicTraps();
-		Key key = terminal.readInput();
-		if (key == null) return;
-		if(key.getKind().equals(Kind.ArrowUp)) level.movePlayerUp();
-		else if(key.getKind().equals(Kind.ArrowDown)) level.movePlayerDown();
-		else if(key.getKind().equals(Kind.ArrowRight)) level.movePlayerRight();
-		else if(key.getKind().equals(Kind.ArrowLeft)) level.movePlayerLeft();
 	}
 
 	/**
