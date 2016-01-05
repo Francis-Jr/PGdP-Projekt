@@ -23,33 +23,26 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Level {
-	
-	//TODO Chars aussuchen
+
 	private final char  heart = '\u2665',
-						key = '$',
-						outerWall = ' ', //'\u00B7',
 						frameVertical = '\u2502',
 						frameHorizontal = '\u2500',
 						frameUpperRight = '\u2510',
 						frameUpperLeft = '\u250C',
 						frameLowerRight = '\u2518',
-						frameLowerLeft = '\u2514',
-						escape = '\u241B',
-						enter = '\u23CE';
+						frameLowerLeft = '\u2514';
 						
 	
 	private Terminal terminal;
 	
 	private StaticGameObject[][] objects;
-	private Player player;
+	private Player player = null;
 	private Vector<DynamicTrap> dynTraps = new Vector<DynamicTrap>();
 	
 	private int levelWidth, levelHeight;
 	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
 	private boolean isFrozen = false;
 	private boolean isWon = false;
-	private boolean hasKey = false;
-	private int livesLeft = 5;
 	
 	public Level(Terminal terminal, String path){
 		this.terminal = terminal;
@@ -89,28 +82,30 @@ public class Level {
 					//(1)
 					try {
 						switch(Integer.parseInt(obj.getProperty(x + "," + y))){
-						case 0:	objects[x][y] = new Wall(x==0 || y==0 || x==levelWidth-1 || y==levelHeight-1);
+						case 0:	objects[x][y] = new Wall(x,y,terminal,this,x==0 || y==0 || x==levelWidth-1 || y==levelHeight-1);
 								break;
-						case 1: objects[x][y] = new Entry();
-								player = new Player(x,y); 
+						case 1: objects[x][y] = new Entry(x,y,terminal,this);
+								player = new Player(x,y,terminal,this); 
 								break;
-						case 2: objects[x][y] = new Exit();			
+						case 2: objects[x][y] = new Exit(x,y,terminal,this);			
 								break;
-						case 3: objects[x][y] = new StaticTrap();	
+						case 3: objects[x][y] = new StaticTrap(x,y,terminal,this);	
 								break;
-						case 4: dynTraps.add(new DynamicTrap(x,y));	
+						case 4: objects[x][y] = new Empty(x,y,terminal,this);
+								dynTraps.add(new DynamicTrap(x,y,terminal,this));	
 								break;
-						case 5: objects[x][y] = new ExitKey();
+						case 5: objects[x][y] = new ExitKey(x,y,terminal,this);
 								break;
-						case 6: objects[x][y] = new Empty();
+						case 6: objects[x][y] = new Empty(x,y,terminal,this);
 								break;
 						}
 					}
 					catch(NumberFormatException e){
-						objects[x][y] = new Empty();
+						objects[x][y] = new Empty(x,y,terminal,this);
 					}
 				}
 			}
+			if(player == null) System.err.println("[ERROR] @ Level() : no entry found. no player placed.");
 			
 		//Fenstergroesse setzen und Fenster um Player zentrieren
 			windowWidth = terminal.getTerminalSize().getColumns();
@@ -124,9 +119,17 @@ public class Level {
 			
 		//Alle zeichen ins Terminal schreiben
 			printWholeWindow();
+			
+		//Level an Player und DynTraps übergeben
+			player.setLevel(this);
+			for(DynamicTrap trap : dynTraps){
+				trap.setLevel(this);
+			}
 	}
 
 	public StaticGameObject getObjectAt(int x , int y){
+		if(x<0 || x >= levelWidth || y<0 || y >= levelHeight)
+			return null;
 		return objects[x][y];
 	}
 	
@@ -137,20 +140,36 @@ public class Level {
 	public int getHeight(){
 		return levelHeight;
 	}
+	
+	public int getWindowX(){
+		return windowPositionX;
+	}
+	
+	public int getWindowY(){
+		return windowPositionY;
+	}
+	
+	public int getWindowWidth(){
+		return windowWidth;
+	}
+	
+	public int getWindowHeight(){
+		return windowHeight;
+	}
 
-	public void unprintMovingObjects(){
+	/*public void unprintMovingObjects(){
 		if(isFrozen) return;
 		for(DynamicTrap trap : dynTraps){
 			printInTerminal(trap.getX(), trap.getY());
 		}
 		printInTerminal(player.getX() , player.getY());
-	}
+	}*/ //TODO final remove
 
-	/**
+	/* /**
 	 * 
 	 * @param positionX position relativ zum Level
 	 * @param positionY position relativ zum Level
-	 */
+	
 	private void printInTerminal(int positionX, int positionY){
 		if(positionX >= levelWidth || positionY >= levelHeight) 
 			return;
@@ -161,49 +180,52 @@ public class Level {
 		terminal.applyBackgroundColor(objects[positionX][positionY].getBgColor());
 		terminal.moveCursor(positionX - windowPositionX, positionY - windowPositionY);
 		terminal.putCharacter(objects[positionX][positionY].getChar());
-	}
+	} TODO final remove */
 	
-	private void printPlayer(boolean onDynamicTrap){
-		terminal.applyForegroundColor(getColor(7));
-		if(onDynamicTrap)
-			terminal.applyBackgroundColor(getColor(4));
+	/*
+	private void printPlayer(){
+		terminal.applyForegroundColor(player.getColor());
+		if(player.onDynamicTrap(dynTraps))
+			terminal.applyBackgroundColor(dynTraps.get(0).getColor());
 		else
 			terminal.applyBackgroundColor(objects[player.getX()][player.getY()].getColor());
 		terminal.moveCursor(player.getX() - windowPositionX, player.getY() - windowPositionY);
-		terminal.putCharacter(getChar(7));
-	}
+		terminal.putCharacter(player.getChar());
+	} TODO final remove */
 	
+	/*
 	private void printDynamicTrap(DynamicTrap trap){
 		if(trap.getX() < windowPositionX || trap.getX() >= windowPositionX + windowWidth || 
 				trap.getY() < windowPositionY || trap.getY() >= windowPositionY + windowWidth)
 			return;
-		terminal.applyForegroundColor(getColor(4));
+		terminal.applyForegroundColor(dynTraps.get(0).getColor());
 		terminal.applyBackgroundColor(objects[trap.getX()][trap.getY()].getColor());
 		terminal.moveCursor(trap.getX() - windowPositionX, trap.getY() - windowPositionY);
 		terminal.putCharacter(trap.getChar());
-	}
+	}TODO final remove */
 	
 	private void printWholeWindow(){
 		terminal.clearScreen();
 		//Labyrinth
 			for(int x = windowPositionX ; x < windowPositionX + windowWidth ; x++){
+				if(x >= levelWidth) break;
 				for(int y = windowPositionY ; y < windowPositionY + windowHeight; y++){
-					printInTerminal(x,y);
+					if(y >= levelHeight) break;
+					objects[x][y].printInTerminal();
 				}
 			}
 			
 		//DynamicTraps and Player
-			printPlayer(false);
+			player.printInTerminal();
 			for(DynamicTrap trap : dynTraps){
-				printDynamicTrap(trap);
+				trap.printInTerminal();
 			}
 			
 		//Scoreboard
 			printScoreboard();
-				
 	}
 	
-	private void printScoreboard(){
+	public void printScoreboard(){
 		int lastRow = terminal.getTerminalSize().getRows() - 1;
 		int lastColumn = terminal.getTerminalSize().getColumns() - 1;
 		
@@ -244,12 +266,12 @@ public class Level {
 		terminal.moveCursor(3, lastRow - 2);
 		terminal.putCharacter(frameVertical);
 		terminal.putCharacter(' ');
-		for(int n = 0 ; n < livesLeft ; n++){
+		for(int n = 0 ; n < player.getLives() ; n++){
 			terminal.putCharacter(heart);
 			terminal.putCharacter(' ');
 		}
-		if(livesLeft >= 0){
-			for(int n = 0 ; n < 5 - livesLeft ; n++){
+		if(player.getLives() >= 0){
+			for(int n = 0 ; n < 5 - player.getLives() ; n++){
 				terminal.putCharacter(' ');
 				terminal.putCharacter(' ');
 			}
@@ -263,13 +285,13 @@ public class Level {
 			
 		
 		//Schlï¿½ssel
-		terminal.applyForegroundColor(Color.YELLOW);
+		terminal.applyForegroundColor(Color.YELLOW); //TODO final definieren...
 		terminal.applyBackgroundColor(Color.BLACK);
 		
 		terminal.moveCursor(18, lastRow-2);
 		terminal.putCharacter(frameVertical);
 		terminal.putCharacter(' ');
-		terminal.putCharacter(hasKey ? key : ' ');
+		terminal.putCharacter(player.hasKey() ? StaticGameObject.getKeyChar() : ' ');
 		terminal.putCharacter(' ');
 		terminal.putCharacter(frameVertical);
 		
@@ -304,63 +326,10 @@ public class Level {
 			terminal.putCharacter(chars[n]);
 		}
 	}
-
-	private char getChar(int obj){
-		switch(obj){
-		case 8:	return outerWall;//WandRand
-		case 0: return 'X'; //wand
-		case 2: return 'E'; //Ausgang
-		case 3: return '#'; //static trap
-		case 4: return '+'; //dynamic trap
-		case 5: return key; //Schluessel
-		case 7: return 'o'; //Player
-		case 1:	return '-';	//eingang
-		case 6: 			//leer
-		default: return ' ';
-		}
-	}
-
-	private Color getColor(int obj){
-		switch(obj){
-		case 0: return Color.WHITE; //wand
-		case 2: return Color.BLUE; 	//Ausgang
-		case 3: return Color.RED; 	//static trap
-		case 4: return Color.RED; 	//dynamic trap
-		case 5: return Color.YELLOW;//Schluessel
-		case 7: return Color.GREEN;	//Player
-		case 8:						//WandRand
-		case 1:						//eingang
-		case 6: 					//leer
-		default: return Color.BLACK;
-		}
-	}
 	
-	private Color getBgColor(int obj){
-		switch(obj){
-		case 8: return Color.CYAN;
-		case 0: return Color.WHITE;
-		default: return Color.BLACK;
-		}
-	}
-	
-	public void moveDynamicTraps(){
-		if(isFrozen) return;
-		for(DynamicTrap trap : dynTraps){
-			trap.move(trap.canWalk(objects[trap.getX()][trap.getY()-1]), 
-					trap.canWalk(objects[trap.getX()+1][trap.getY()]),
-					trap.canWalk(objects[trap.getX()][trap.getY()+1]),
-					trap.canWalk(objects[trap.getX()-1][trap.getY()]));
-			printDynamicTrap(trap);
-			if(trap.getX() == player.getX() && trap.getY() == player.getY()){
-				printPlayer(true);
-				damage(1);
-			}
-		}
-	}
-	
-	//TODO weiter objektorientierung einfï¿½hren
-	
+	/*
 	public void movePlayer(int direction){ //0=UP , 1=RIGHT , 2=DOWN , 3=LEFT, 4=NO_MOVE
+		player.move(direction);
 		if(isFrozen) return;
 		int newX = player.getX() + (direction==1 ? 1 : 0) + (direction==3 ? -1 : 0);
 		int newY = player.getY() + (direction==0 ? -1 : 0) + (direction==2 ? 1 : 0);
@@ -393,35 +362,21 @@ public class Level {
 			//auf objekt reagieren
 			interact();
 		}
+	}TODO final remove */
+	
+	public Player getPlayer(){
+		return player;
 	}
 	
-	private void interact() {
-		switch(objects[playerX][playerY]){
-		case 2: endLevel(true); break; //w/o key player couldnt walk on exit
-		case 3: damage(2); break;
-		case 5: hasKey = true;
-				printScoreboard();
-				objects[playerX][playerY] = 6; //removing key
-				break; 
-		}
-	}
-
-	private void damage(int i) {
-		livesLeft -= i;
-		
-		if(livesLeft <= 0){
-			livesLeft = 0;
-			endLevel(false);
-		}
-		printScoreboard();
+	public Vector<DynamicTrap> getDynamicTraps(){
+		return dynTraps;
 	}
 	
-	private void endLevel(boolean won){
+	public void endLevel(boolean won){
 		isWon = won;
 		
 		int startcolumn = 26;
 		int lastRow = terminal.getTerminalSize().getRows() - 1;
-		int lastColumn = terminal.getTerminalSize().getColumns() - 1;
 		
 		terminal.applyBackgroundColor(Color.BLACK);
 		terminal.applyForegroundColor(won ? Color.GREEN : Color.RED);
@@ -437,7 +392,7 @@ public class Level {
 
 		isFrozen = true;
 		for(DynamicTrap trap : dynTraps){
-			printDynamicTrap(trap);
+			trap.printInTerminal();;
 		}
 	}
 	
@@ -447,24 +402,20 @@ public class Level {
 	 * 1 Quit Game
 	 * 2 enter Menu
 	 * 3 next Level
+	 * 4 retry Level
 	 * @param key
 	 * @return an operation code (list see above)
 	 */
 	public int getOperationCode (Key key){
-		//TODO nach hï¿½ufigkeit sortieren
 		if(key.getKind().equals(Key.Kind.Escape))
 			return 2;
-		if(isFrozen && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '1')
+		if(isFrozen && isWon && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '1')
 			return 3;
 		if(isFrozen && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '2')
 			return 1;
 		if(key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == 'e')
 			return 1; //TODO nur zum testen
 		return 0;
-	}
-	
-	public boolean isWon(){
-		return isWon;
 	}
 	
 	public void save(int slot){
@@ -474,5 +425,25 @@ public class Level {
 	public static Level load(int slot){
 		//TODO
 		return null;
+	}
+
+	public boolean isWon() {
+		return isWon;
+	}
+
+	public void reCenterX() {
+		windowPositionX = player.getX() - windowWidth/2;
+		if(windowPositionX < 0 ) windowPositionX = 0;
+		else if (windowPositionX > levelWidth - windowWidth - 1) 
+			windowPositionX = levelWidth - windowWidth - 1;
+		printWholeWindow();
+	}
+
+	public void reCenterY() {
+		windowPositionY = player.getY() - windowHeight/2;
+		if(windowPositionY < 0 ) windowPositionY = 0;
+		else if (windowPositionY > levelHeight - windowHeight - 1) 
+			windowPositionY = levelHeight - windowHeight - 1;
+		printWholeWindow();
 	}
 }

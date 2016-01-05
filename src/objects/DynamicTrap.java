@@ -1,94 +1,58 @@
 package objects;
 
+import java.util.Vector;
+
+import level.Level;
+
+import com.googlecode.lanterna.terminal.Terminal;
+
 public class DynamicTrap extends MovingGameObject{
 
 	private int lastDirection = (int) Math.floor( 4 * Math.random() );
 	//Direction code:    0 = UP   ,   1 = RIGHT   ,   2 = DOWN   ,   3 = LEFT
 	
-	public DynamicTrap(int x, int y) {
+	public DynamicTrap(int x, int y, Terminal term, Level lv) {
 		this.x = x;
 		this.y = y;
-	}
-	
-	public void move(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
-		if(!(upPossible || rightPossible || downPossible || leftPossible)) return; //falls keine Bewegung möglich Abbruch 
+		terminal = term;
+		level = lv;
 		
-		//TODO KI überdenken...
-		//Taktik: 70% Wahrscheinlichkeit Kurs beibehalten; 20% Richtung ändern; 10% umkehren
-		double tactics = Math.random();
+		color = dynamicTrapColor;
+		charRepresentation = '+';
 		
-		if(tactics < 0.7){ //Kurs beibehalten
-			moveStraight(upPossible, rightPossible, downPossible, leftPossible);
-		}
-		
-		else if(tactics < 0.9){ // Richtung ändern
-			moveCurve(upPossible, rightPossible, downPossible, leftPossible);
-		}
-		
-		else{ //umkehren
-			moveTurnAround(upPossible, rightPossible, downPossible, leftPossible);
-		}
-	}
-	
-	private void moveStraight(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
-		if(move(lastDirection, upPossible, rightPossible, downPossible, leftPossible)) return;
-		moveCurve(upPossible, rightPossible, downPossible, leftPossible);
-	}
-
-	private void moveCurve(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
-		//50% Rechtskurve ; 50% Linkskurve
-		double rightLeft = Math.random();
-		if(rightLeft < 0.5){ //Rechtskurve (falls nicht möglich Linkskurve)
-			if(move(lastDirection + 1, upPossible, rightPossible, downPossible, leftPossible)) return;
-			if(move(lastDirection - 1, upPossible, rightPossible, downPossible, leftPossible)) return;
-			
-		}
-		else{ //Linkskurve (falls nicht möglich Rechtskurve)
-			if(move(lastDirection - 1, upPossible, rightPossible, downPossible, leftPossible)) return;
-			if(move(lastDirection + 1, upPossible, rightPossible, downPossible, leftPossible)) return;
-		}
-		moveTurnAround(upPossible, rightPossible, downPossible, leftPossible);
-	}
-
-	private void moveTurnAround(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
-		if(move(lastDirection + 2, upPossible, rightPossible, downPossible, leftPossible)) return;
-		moveStraight(upPossible, rightPossible, downPossible, leftPossible);
-	}
-
-	/**
-	 * 
-	 * @param direction
-	 * @return true wenn erfolgreich bewegt wurde, false wenn bewegung nicht moeglich
-	 */
-	private boolean move(int direction, boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
-		if(direction > 3) direction -= 4;
-		else if(direction < 0 ) direction += 4;
-		switch(direction){
-			case 0:
-				if(upPossible) { y -= 1;	return true;}
-				else return false;
-			case 1:
-				if(rightPossible) { x += 1;	return true;}
-				else return false;
-			case 2:	
-				if(downPossible) { y += 1;	return true;}
-				else return false;
-			case 3:
-				if(leftPossible) { x -= 1;	return true;}
-				else return false; 
-		}
-		return true;
+		canWalkEmpty = true;
+		canWalkEntry = false;
+		canWalkExit = false;
+		canWalkExitKey = false;
+		canWalkPlayer = true;
+		canWalkDynamicTrap = true;
+		canWalkStaticTrap = true;
+		canWalkWall = false;
+		canWalkDefault = false;
 	}
 
 	@Override
-	public boolean canWalk(StaticGameObject obj) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isPlayer() {
-		return false;
+	public boolean canWalk(int newX, int newY) {
+		if (newX < 0 || newY < 0 || newX >= level.getWidth() || newY >= level.getHeight())
+			return false;
+		
+		StaticGameObject obj = level.getObjectAt(newX, newY);
+		if (obj == null)
+			return false;
+		if(obj instanceof Empty)
+			return canWalkEmpty;
+		if(obj instanceof Wall)
+			return canWalkWall;
+		if(obj instanceof Entry)
+			return canWalkEntry;
+		if(obj instanceof ExitKey)
+			return canWalkExitKey;
+		if(obj instanceof StaticTrap)
+			return canWalkStaticTrap;
+		if(obj instanceof Exit)
+			return canWalkExit;
+		return canWalkDefault;
+		
 	}
 
 	@Override
@@ -110,5 +74,67 @@ public class DynamicTrap extends MovingGameObject{
 	@Override
 	public void hurt(int damage) {
 		//do nothing
+	}
+
+	public void move() {
+		
+		//TODO KI???
+		
+		int direction = 0; //0 UP   1 RIGHT   2 DOWN   3 LEFT
+		
+		//decide on direction
+			Vector<Integer> possibleDirections = new Vector<>();
+			if(canWalk(x, y-1)){
+				possibleDirections.add(0);
+			}
+			if(canWalk(x+1, y)){
+				possibleDirections.add(1);
+			}
+			if(canWalk(x, y+1)){
+				possibleDirections.add(2);
+			}
+			if(canWalk(x-1, y)){
+				possibleDirections.add(3);
+			}
+			direction = pickRandom(possibleDirections);
+			
+		switch(direction){
+		case 0:	y -= 1;	break;
+		case 1: x += 1; break;
+		case 2: y += 1; break;
+		case 3: x -= 1; break;
+		}
+			
+		level.getObjectAt(x, y).onContact(this);
+	}
+
+	private int pickRandom(Vector<Integer> a) {
+		return a.get((int) Math.floor((Math.random() * a.size())));
+	}
+
+	@Override
+	public void printInTerminal() {
+		terminal.moveCursor(x, y);
+		terminal.applyBackgroundColor(level.getObjectAt(x, y).getColor());
+		terminal.applyForegroundColor(getColor());
+		terminal.putCharacter(getChar());
+	}
+
+	@Override
+	public void unprint() {
+		terminal.moveCursor(x, y);
+		terminal.applyBackgroundColor(level.getObjectAt(x, y).getBgColor());
+		terminal.applyForegroundColor(level.getObjectAt(x, y).getColor());
+		terminal.putCharacter(level.getObjectAt(x, y).getChar());
+	}
+
+	@Override
+	public boolean isOnDynamicTrap(Vector<DynamicTrap> dynTraps) {
+		for(DynamicTrap trap : dynTraps){
+			if(trap.getX() == x && trap.getY() == y && !(trap == this)){
+				return true;
+			}
+		}
+		return false;
 	}
 }

@@ -1,5 +1,6 @@
 package main;
 
+import objects.DynamicTrap;
 import level.Level;
 
 import com.googlecode.lanterna.TerminalFacade;
@@ -34,7 +35,7 @@ public class Main {
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		
-		playLevel("level_small.properties",terminal);
+		playLevel("level_small    .properties",terminal);
 		
 		terminal.exitPrivateMode();
 	}
@@ -52,7 +53,9 @@ public class Main {
 		
 		while(terminal.getTerminalSize().getColumns() > 0){ //endlosschleife: return statements nicht ersatzlos entfernen
 			key = terminal.readInput();
-			if(key != null) computeKey = key;
+			if(key != null){
+				computeKey = key;
+			}
 			
 			computeDelta();
 			computeCounter = computeCounter + delta;
@@ -62,7 +65,6 @@ public class Main {
 				if(menu){
 					computeMenu(terminal,computeKey);
 				}
-				
 				else{
 					switch(computeLevel(terminal,level,computeKey)){
 					case 1: return true;
@@ -72,9 +74,9 @@ public class Main {
 				try {
 					Thread.sleep(3);
 				} catch (InterruptedException e) {e.printStackTrace();}
+				
+				computeKey = null; //computeKey wurde verarbeitet
 			}
-			
-			computeKey = null; //computeKey wurde verarbeitet
 		}
 		System.err.println("[ALERT] playLevel got past endless loop... this should not happen");
 		return false;
@@ -88,32 +90,60 @@ public class Main {
 	 * @return 0 default, 1 won, 2 lost
 	 */
 	private static int computeLevel(Terminal terminal, Level level, Key computeKey) {
-		level.unprintMovingObjects();
-		if (computeKey == null) {
-			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
-		}
-		else if(computeKey.getKind().equals(Kind.ArrowUp)) level.movePlayer(0);
-		else if(computeKey.getKind().equals(Kind.ArrowDown)) level.movePlayer(2);
-		else if(computeKey.getKind().equals(Kind.ArrowRight)) level.movePlayer(1);
-		else if(computeKey.getKind().equals(Kind.ArrowLeft)) level.movePlayer(3);
-		else {
-			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
-			T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
-			switch(level.getOperationCode(computeKey)){
-			case 1: System.exit(0);
-			case 2: menu = true;
-					printMenu(terminal);
-			case 3: 
-				if(level.isWon()){
-					return 1;
-				}
-				else{
-					return 2;
+		if(computeKey != null){
+			if(computeKey.getKind().equals(Kind.ArrowUp)){
+				level.getPlayer().unprint();
+				level.getPlayer().move(0);
+			}
+			else if(computeKey.getKind().equals(Kind.ArrowDown)){
+				level.getPlayer().unprint();
+				level.getPlayer().move(2);
+			}
+			else if(computeKey.getKind().equals(Kind.ArrowRight)){
+				level.getPlayer().unprint();
+				level.getPlayer().move(1);
+			}
+			else if(computeKey.getKind().equals(Kind.ArrowLeft)){
+				level.getPlayer().unprint();
+				level.getPlayer().move(3);
+			}
+			else {//Player wird nicht bewegt, aber evlt etwas anderes gemacht
+				
+				level.getPlayer().printInTerminal(); 
+				
+				T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
+				switch(level.getOperationCode(computeKey)){
+				case 1: System.exit(0);
+				case 2: menu = true;
+						printMenu(terminal);
+				case 3: 
+					if(level.isWon()){
+						return 1;
+					}
+					else{
+						return 2;
+					}
 				}
 			}
 		}
 		
-		level.moveDynamicTraps();
+		//move dynTraps
+		for(DynamicTrap trap : level.getDynamicTraps()){
+			trap.unprint();
+			trap.move();
+		}
+		
+		//collisions
+		if(level.getPlayer().isOnDynamicTrap(level.getDynamicTraps())){
+			level.getPlayer().hurt(1);
+		}
+		
+		//print player and dyntraps
+		level.getPlayer().printInTerminal();
+		for(DynamicTrap trap : level.getDynamicTraps()){
+			trap.printInTerminal();
+		}
+		
 		return 0;
 	}
 

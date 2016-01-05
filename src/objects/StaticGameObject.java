@@ -1,8 +1,13 @@
 package objects;
+import level.Level;
+
+import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
 
 public abstract class StaticGameObject {
+	
+	//TODO Klasse aufräumen
 	
 	protected static final Color	defaultColor = Color.WHITE,
 									defaultBgColor = Color.BLACK,
@@ -18,9 +23,20 @@ public abstract class StaticGameObject {
 								staticTrapChar = '#',
 								keyChar = '$';
 	
+	protected int x,y;
+	protected Terminal terminal;
+	protected Level level;
 	protected char charRepresentation = defaultChar;
 	protected Color color = defaultColor;
 	protected Color bgColor = defaultBgColor;
+	
+	public static char getKeyChar(){
+		return keyChar;
+	}
+	
+	public void setLevel(Level lv){
+		level = lv;
+	}
 	
 	public char getChar(){
 		return charRepresentation;
@@ -36,4 +52,14 @@ public abstract class StaticGameObject {
 	
 	public abstract void onContact(MovingGameObject mov);
 	
+	public void printInTerminal(){
+		try{
+			terminal.moveCursor(x, y);
+		} catch(NullPointerException e){
+			System.err.println("Nullpointer trying to print " + this.getClass().getName() + " at (" + x + "," + y +")");
+		}
+		terminal.applyBackgroundColor(bgColor);
+		terminal.applyForegroundColor(color);
+		terminal.putCharacter(charRepresentation);
+	}
 }
