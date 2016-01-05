@@ -262,7 +262,7 @@ public class Level {
 		terminal.putCharacter(frameLowerRight);
 			
 		
-		//Schlüssel
+		//Schlï¿½ssel
 		terminal.applyForegroundColor(Color.YELLOW);
 		terminal.applyBackgroundColor(Color.BLACK);
 		
@@ -358,12 +358,12 @@ public class Level {
 		}
 	}
 	
-	//TODO weiter objektorientierung einführen
+	//TODO weiter objektorientierung einfï¿½hren
 	
 	public void movePlayer(int direction){ //0=UP , 1=RIGHT , 2=DOWN , 3=LEFT, 4=NO_MOVE
 		if(isFrozen) return;
-		int newX = playerX + (direction==1 ? 1 : 0) + (direction==3 ? -1 : 0);
-		int newY = playerY + (direction==0 ? -1 : 0) + (direction==2 ? 1 : 0);
+		int newX = player.getX() + (direction==1 ? 1 : 0) + (direction==3 ? -1 : 0);
+		int newY = player.getY() + (direction==0 ? -1 : 0) + (direction==2 ? 1 : 0);
 		
 		if(newY >= 0 && newY < levelHeight && newX >= 0 && newX < levelWidth && isWalkableForPlayer(newX , newY)){
 			playerX = newX;
@@ -451,7 +451,7 @@ public class Level {
 	 * @return an operation code (list see above)
 	 */
 	public int getOperationCode (Key key){
-		//TODO nach häufigkeit sortieren
+		//TODO nach hï¿½ufigkeit sortieren
 		if(key.getKind().equals(Key.Kind.Escape))
 			return 2;
 		if(isFrozen && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '1')

@@ -6,6 +6,10 @@ public class Player extends MovingGameObject {
 		// TODO Auto-generated constructor stub
 	}
 
+	public void move(int direction){
+		
+	}
+	
 	@Override
 	public boolean canWalk(StaticGameObject obj) {
 		// TODO Auto-generated method stub
