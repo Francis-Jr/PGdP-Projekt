@@ -7,7 +7,11 @@ public class Player extends MovingGameObject {
 	}
 
 	public void move(int direction){
+		//TODO implement
 		
+		/*
+		 * 
+		 */
 	}
 	
 	@Override
