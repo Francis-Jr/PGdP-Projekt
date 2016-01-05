@@ -18,6 +18,8 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  *  
  */
 
+
+//TODO objects objektorientieren...
 public class Main {
 	
 	private static final long COMPUTE_INTERVALL = (long) (7e7);
@@ -37,13 +39,18 @@ public class Main {
 		terminal.exitPrivateMode();
 	}
 	
-	
-	public static void playLevel(String path, Terminal terminal){
+	/**
+	 * 
+	 * @param path
+	 * @param terminal
+	 * @return level was one or lost
+	 */
+	public static boolean playLevel(String path, Terminal terminal){
 		Level level = new Level(terminal, path);
 		Key key;
 		Key computeKey = null;
 		
-		while(terminal.getTerminalSize().getColumns() > 0){ //break; nicht ohne ersatz entfernen!
+		while(terminal.getTerminalSize().getColumns() > 0){ //endlosschleife: return statements nicht ersatzlos entfernen
 			key = terminal.readInput();
 			if(key != null) computeKey = key;
 			
@@ -53,20 +60,34 @@ public class Main {
 			if(computeCounter > COMPUTE_INTERVALL){
 				computeCounter = 0;
 				if(menu){
-					if(computeMenu(terminal)) break;
+					computeMenu(terminal,computeKey);
 				}
+				
 				else{
-					computeLevel(terminal,level,computeKey);
-					computeKey = null;
+					switch(computeLevel(terminal,level,computeKey)){
+					case 1: return true;
+					case 2: return false;
+					}
 				}
 				try {
 					Thread.sleep(3);
 				} catch (InterruptedException e) {e.printStackTrace();}
 			}
+			
+			computeKey = null; //computeKey wurde verarbeitet
 		}
+		System.err.println("[ALERT] playLevel got past endless loop... this should not happen");
+		return false;
 	}
 
-	private static void computeLevel(Terminal terminal, Level level, Key computeKey) {
+	/**
+	 * 
+	 * @param terminal
+	 * @param level
+	 * @param computeKey
+	 * @return 0 default, 1 won, 2 lost
+	 */
+	private static int computeLevel(Terminal terminal, Level level, Key computeKey) {
 		level.unprintMovingObjects();
 		if (computeKey == null) {
 			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
@@ -77,22 +98,35 @@ public class Main {
 		else if(computeKey.getKind().equals(Kind.ArrowLeft)) level.movePlayer(3);
 		else {
 			level.movePlayer(4); //this is not actually moving the player, but is necessary for reprinting
+			T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
 			switch(level.getOperationCode(computeKey)){
 			case 1: System.exit(0);
-			case 2: //TODO enter menu
+			case 2: menu = true;
+					printMenu(terminal);
+			case 3: 
+				if(level.isWon()){
+					return 1;
+				}
+				else{
+					return 2;
+				}
 			}
 		}
 		
 		level.moveDynamicTraps();
+		return 0;
+	}
+
+	private static void printMenu(Terminal terminal) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/**
 	 * 
-	 * @return true if player wants to quit
 	 */
-	private static boolean computeMenu(Terminal terminal) {
+	private static void computeMenu(Terminal terminal, Key computeKey) {
 		// TODO Auto-generated method stub
-		return true;
 	}
 
 

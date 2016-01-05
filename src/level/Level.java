@@ -7,6 +7,15 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.Vector;
 
+import objects.DynamicTrap;
+import objects.Empty;
+import objects.Entry;
+import objects.Exit;
+import objects.ExitKey;
+import objects.Player;
+import objects.StaticGameObject;
+import objects.StaticTrap;
+import objects.Wall;
 import main.T;
 
 import com.googlecode.lanterna.input.Key;
@@ -18,23 +27,27 @@ public class Level {
 	//TODO Chars aussuchen
 	private final char  heart = '\u2665',
 						key = '$',
-						outerWall = '\u00B7',
+						outerWall = ' ', //'\u00B7',
 						frameVertical = '\u2502',
 						frameHorizontal = '\u2500',
 						frameUpperRight = '\u2510',
 						frameUpperLeft = '\u250C',
 						frameLowerRight = '\u2518',
-						frameLowerLeft = '\u2514';
+						frameLowerLeft = '\u2514',
+						escape = '\u241B',
+						enter = '\u23CE';
 						
 	
 	private Terminal terminal;
 	
-	private int[][] objects;
+	private StaticGameObject[][] objects;
+	private Player player;
 	private Vector<DynamicTrap> dynTraps = new Vector<DynamicTrap>();
+	
 	private int levelWidth, levelHeight;
 	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
-	private int playerX, playerY;
 	private boolean isFrozen = false;
+	private boolean isWon = false;
 	private boolean hasKey = false;
 	private int livesLeft = 5;
 	
@@ -64,55 +77,46 @@ public class Level {
 			} catch (IOException e) { e.printStackTrace();}
 			
 		/*	
-		 *  (1) convert Properties to Array AND 
-		 *	(2) find entry and place Player AND 
-		 *  (3) put dynamic Traps in Vector
+		 *  convert Properties to Array AND 
+		 *	find entry and place Player AND 
+		 *  put dynamic Traps in Vector
 		 */
 			levelWidth = Integer.parseInt(obj.getProperty("Width"));
 			levelHeight = Integer.parseInt(obj.getProperty("Height"));
-			objects = new int[levelWidth][levelHeight];
+			objects = new StaticGameObject[levelWidth][levelHeight];
 			for(int x = 0 ; x < objects.length ; x++){
 				for(int y = 0 ; y < objects[x].length ; y++){
 					//(1)
 					try {
-						objects[x][y] = Integer.parseInt(obj.getProperty(x + "," + y));
+						switch(Integer.parseInt(obj.getProperty(x + "," + y))){
+						case 0:	objects[x][y] = new Wall(x==0 || y==0 || x==levelWidth-1 || y==levelHeight-1);
+								break;
+						case 1: objects[x][y] = new Entry();
+								player = new Player(x,y); 
+								break;
+						case 2: objects[x][y] = new Exit();			
+								break;
+						case 3: objects[x][y] = new StaticTrap();	
+								break;
+						case 4: dynTraps.add(new DynamicTrap(x,y));	
+								break;
+						case 5: objects[x][y] = new ExitKey();
+								break;
+						case 6: objects[x][y] = new Empty();
+								break;
+						}
 					}
 					catch(NumberFormatException e){
-						objects[x][y] = 6;
-					}
-					
-					//(2)
-					if(objects[x][y] == 1){
-						playerX = x; playerY = y;
-					}
-					
-					//(3)
-					else if(objects[x][y] == 4){
-						dynTraps.add(new DynamicTrap(x,y));
-						objects[x][y] = 6;
+						objects[x][y] = new Empty();
 					}
 				}
-			}
-			
-		//Ränder hervorheben:
-			for(int x = 0 ; x < levelWidth ; x++){
-				if(objects[x][0] == 0)
-					objects[x][0] = 8;
-				if(objects[x][levelHeight - 1] == 0)
-					objects[x][levelHeight - 1] = 8;
-			}
-			for(int y = 0 ; y < levelHeight ; y++){
-				if(objects[0][y] == 0)
-					objects[0][y] = 8;
-				if(objects[levelWidth - 1][y] == 0)
-					objects[levelWidth - 1][y] = 8;
 			}
 			
 		//Fenstergroesse setzen und Fenster um Player zentrieren
 			windowWidth = terminal.getTerminalSize().getColumns();
 			windowHeight = terminal.getTerminalSize().getRows() - 5; //5 Zeilen Scoreboard
-			windowPositionX = playerX - windowWidth/2;
-			windowPositionY = playerY - windowHeight/2;
+			windowPositionX = player.getX() - windowWidth/2;
+			windowPositionY = player.getY() - windowHeight/2;
 			if(windowPositionX < 0 ) windowPositionX = 0;
 			else if (windowPositionX > levelWidth - windowWidth - 1) windowPositionX = levelWidth - windowWidth - 1;
 			if(windowPositionY < 0 ) windowPositionY = 0;
@@ -122,7 +126,7 @@ public class Level {
 			printWholeWindow();
 	}
 
-	public int getObjectAt(int x , int y){
+	public StaticGameObject getObjectAt(int x , int y){
 		return objects[x][y];
 	}
 	
@@ -133,40 +137,13 @@ public class Level {
 	public int getHeight(){
 		return levelHeight;
 	}
-	
-	private boolean isWalkableForTrap(int positionX, int positionY) {
-		//player walkable!
-		if(positionX < 0 || positionX >= levelWidth || positionY < 0 || positionY >= levelHeight) return false;
-		switch(objects[positionX][positionY]){
-		case 1:
-		case 6:
-		case 4:
-		case 5:
-			return true;
-		default:
-			return false;
-		}
-	}
-
-	private boolean isWalkableForPlayer(int positionX, int positionY) {
-		if(positionX < 0 || positionX >= levelWidth || positionY < 0 || positionY >= levelHeight) return false;
-		switch(objects[positionX][positionY]){
-		case 0:
-		case 8:
-			return false;
-		case 2:
-			return hasKey;
-		default:
-			return true;
-		}
-	}
 
 	public void unprintMovingObjects(){
 		if(isFrozen) return;
 		for(DynamicTrap trap : dynTraps){
-			printInTerminal(trap.getPositionX(), trap.getPositionY());
+			printInTerminal(trap.getX(), trap.getY());
 		}
-		printInTerminal(playerX , playerY);
+		printInTerminal(player.getX() , player.getY());
 	}
 
 	/**
@@ -180,10 +157,10 @@ public class Level {
 		if(positionX < windowPositionX || positionX >= windowPositionX + windowWidth ||
 				positionY < windowPositionY || positionY >= windowPositionY + windowHeight)
 			return;
-		terminal.applyForegroundColor(getColor(objects[positionX][positionY]));
-		terminal.applyBackgroundColor(getBgColor(objects[positionX][positionY]));
+		terminal.applyForegroundColor(objects[positionX][positionY].getColor());
+		terminal.applyBackgroundColor(objects[positionX][positionY].getBgColor());
 		terminal.moveCursor(positionX - windowPositionX, positionY - windowPositionY);
-		terminal.putCharacter(getChar(objects[positionX][positionY]));
+		terminal.putCharacter(objects[positionX][positionY].getChar());
 	}
 	
 	private void printPlayer(boolean onDynamicTrap){
@@ -191,19 +168,19 @@ public class Level {
 		if(onDynamicTrap)
 			terminal.applyBackgroundColor(getColor(4));
 		else
-			terminal.applyBackgroundColor(getColor(objects[playerX][playerY]));
-		terminal.moveCursor(playerX - windowPositionX, playerY - windowPositionY);
+			terminal.applyBackgroundColor(objects[player.getX()][player.getY()].getColor());
+		terminal.moveCursor(player.getX() - windowPositionX, player.getY() - windowPositionY);
 		terminal.putCharacter(getChar(7));
 	}
 	
 	private void printDynamicTrap(DynamicTrap trap){
-		if(trap.getPositionX() < windowPositionX || trap.getPositionX() >= windowPositionX + windowWidth || 
-				trap.getPositionY() < windowPositionY || trap.getPositionY() >= windowPositionY + windowWidth)
+		if(trap.getX() < windowPositionX || trap.getX() >= windowPositionX + windowWidth || 
+				trap.getY() < windowPositionY || trap.getY() >= windowPositionY + windowWidth)
 			return;
 		terminal.applyForegroundColor(getColor(4));
-		terminal.applyBackgroundColor(getColor(objects[trap.getPositionX()][trap.getPositionY()]));
-		terminal.moveCursor(trap.getPositionX() - windowPositionX, trap.getPositionY() - windowPositionY);
-		terminal.putCharacter(getChar(4));
+		terminal.applyBackgroundColor(objects[trap.getX()][trap.getY()].getColor());
+		terminal.moveCursor(trap.getX() - windowPositionX, trap.getY() - windowPositionY);
+		terminal.putCharacter(trap.getChar());
 	}
 	
 	private void printWholeWindow(){
@@ -360,7 +337,7 @@ public class Level {
 	
 	private Color getBgColor(int obj){
 		switch(obj){
-		case 8:
+		case 8: return Color.CYAN;
 		case 0: return Color.WHITE;
 		default: return Color.BLACK;
 		}
@@ -369,17 +346,19 @@ public class Level {
 	public void moveDynamicTraps(){
 		if(isFrozen) return;
 		for(DynamicTrap trap : dynTraps){
-			trap.move(isWalkableForTrap(trap.getPositionX(),trap.getPositionY()-1), 
-					isWalkableForTrap(trap.getPositionX()+1,trap.getPositionY()), 
-					isWalkableForTrap(trap.getPositionX(),trap.getPositionY()+1), 
-					isWalkableForTrap(trap.getPositionX()-1,trap.getPositionY()));
+			trap.move(trap.canWalk(objects[trap.getX()][trap.getY()-1]), 
+					trap.canWalk(objects[trap.getX()+1][trap.getY()]),
+					trap.canWalk(objects[trap.getX()][trap.getY()+1]),
+					trap.canWalk(objects[trap.getX()-1][trap.getY()]));
 			printDynamicTrap(trap);
-			if(trap.getPositionX() == playerX && trap.getPositionY() == playerY){
+			if(trap.getX() == player.getX() && trap.getY() == player.getY()){
 				printPlayer(true);
 				damage(1);
 			}
 		}
 	}
+	
+	//TODO weiter objektorientierung einführen
 	
 	public void movePlayer(int direction){ //0=UP , 1=RIGHT , 2=DOWN , 3=LEFT, 4=NO_MOVE
 		if(isFrozen) return;
@@ -418,7 +397,7 @@ public class Level {
 	
 	private void interact() {
 		switch(objects[playerX][playerY]){
-		case 2: winLevel(); break; //w/o key player couldnt walk on exit
+		case 2: endLevel(true); break; //w/o key player couldnt walk on exit
 		case 3: damage(2); break;
 		case 5: hasKey = true;
 				printScoreboard();
@@ -432,41 +411,30 @@ public class Level {
 		
 		if(livesLeft <= 0){
 			livesLeft = 0;
-			lose();
+			endLevel(false);
 		}
 		printScoreboard();
 	}
 	
-	private void lose(){
+	private void endLevel(boolean won){
+		isWon = won;
+		
 		int startcolumn = 26;
 		int lastRow = terminal.getTerminalSize().getRows() - 1;
 		int lastColumn = terminal.getTerminalSize().getColumns() - 1;
 		
 		terminal.applyBackgroundColor(Color.BLACK);
-		terminal.applyForegroundColor(Color.RED);
+		terminal.applyForegroundColor(won ? Color.GREEN : Color.RED);
 		
 		terminal.moveCursor(startcolumn, lastRow-2);
-		printString("You Lost!");
+		printString(won ? "You won!" : "You Lost!");
 		
-		freeze();
-	}
-	
-	private void winLevel(){
-		T.p("You win!");
-		int startcolumn = 26;
-		int lastRow = terminal.getTerminalSize().getRows() - 1;
-		int lastColumn = terminal.getTerminalSize().getColumns() - 1;
-		
-		terminal.applyBackgroundColor(Color.BLACK);
-		terminal.applyForegroundColor(Color.GREEN);
-		
-		terminal.moveCursor(startcolumn, lastRow-2);
-		printString("You Won!");
-		
-		freeze();
-	}
-	
-	public void freeze(){
+		int menucolumn = 40;
+		terminal.moveCursor(menucolumn, lastRow-2);
+		printString("(1) " + (won ? "next Level" : "try again"));
+		terminal.moveCursor(menucolumn, lastRow-1);
+		printString("(2) quit");
+
 		isFrozen = true;
 		for(DynamicTrap trap : dynTraps){
 			printDynamicTrap(trap);
@@ -478,14 +446,33 @@ public class Level {
 	 * 0 Default (do nothing)
 	 * 1 Quit Game
 	 * 2 enter Menu
+	 * 3 next Level
 	 * @param key
 	 * @return an operation code (list see above)
 	 */
 	public int getOperationCode (Key key){
-		if(isFrozen && key.getKind().equals(Key.Kind.Escape))
-			return 1;
-		if(!isFrozen && key.getKind().equals(Key.Kind.Escape))
+		//TODO nach häufigkeit sortieren
+		if(key.getKind().equals(Key.Kind.Escape))
 			return 2;
+		if(isFrozen && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '1')
+			return 3;
+		if(isFrozen && key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == '2')
+			return 1;
+		if(key.getKind().equals(Key.Kind.NormalKey) && key.getCharacter() == 'e')
+			return 1; //TODO nur zum testen
 		return 0;
+	}
+	
+	public boolean isWon(){
+		return isWon;
+	}
+	
+	public void save(int slot){
+		//TODO
+	}
+	
+	public static Level load(int slot){
+		//TODO
+		return null;
 	}
 }

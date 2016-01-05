@@ -1,22 +1,13 @@
-package level;
+package objects;
 
-public class DynamicTrap {
+public class DynamicTrap extends MovingGameObject{
 
-	private int positionX, positionY;
-	private int lastDirection = (int) Math.floor( 4 * Math.random());
+	private int lastDirection = (int) Math.floor( 4 * Math.random() );
 	//Direction code:    0 = UP   ,   1 = RIGHT   ,   2 = DOWN   ,   3 = LEFT
 	
 	public DynamicTrap(int x, int y) {
-		positionX = x;
-		positionY = y;
-	}
-
-	public int getPositionX() {
-		return positionX;
-	}
-
-	public int getPositionY() {
-		return positionY;
+		this.x = x;
+		this.y = y;
 	}
 	
 	public void move(boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
@@ -67,25 +58,57 @@ public class DynamicTrap {
 	/**
 	 * 
 	 * @param direction
-	 * @return true wenn erfolgreich bewegt wurde, false falls bewegung nicht moeglich
+	 * @return true wenn erfolgreich bewegt wurde, false wenn bewegung nicht moeglich
 	 */
 	private boolean move(int direction, boolean upPossible, boolean rightPossible , boolean downPossible , boolean leftPossible) {
 		if(direction > 3) direction -= 4;
 		else if(direction < 0 ) direction += 4;
 		switch(direction){
 			case 0:
-				if(upPossible) { positionY -= 1;	return true;}
+				if(upPossible) { y -= 1;	return true;}
 				else return false;
 			case 1:
-				if(rightPossible) { positionX += 1;	return true;}
+				if(rightPossible) { x += 1;	return true;}
 				else return false;
 			case 2:	
-				if(downPossible) { positionY += 1;	return true;}
+				if(downPossible) { y += 1;	return true;}
 				else return false;
 			case 3:
-				if(leftPossible) { positionX -= 1;	return true;}
+				if(leftPossible) { x -= 1;	return true;}
 				else return false; 
 		}
 		return true;
+	}
+
+	@Override
+	public boolean canWalk(StaticGameObject obj) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isPlayer() {
+		return false;
+	}
+
+	@Override
+	public boolean hasKey() {
+		return false;
+	}
+
+	@Override
+	public void win() {
+		//do nothing. Traps dont win.
+	}
+
+	@Override
+	public boolean tryGiveKey() {
+		//traps dont take keys
+		return false;
+	}
+
+	@Override
+	public void hurt(int damage) {
+		//do nothing
 	}
 }
