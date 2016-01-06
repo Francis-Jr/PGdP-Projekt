@@ -19,6 +19,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  *  
  */
 
+//TODO Level handles Menu on its own!
 
 public class Main {
 	
@@ -34,7 +35,7 @@ public class Main {
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		
-		playLevel("level_big_dense.properties",terminal);
+		playLevel("level_small.properties",terminal);
 		
 		terminal.exitPrivateMode();
 	}
@@ -112,16 +113,15 @@ public class Main {
 				
 				T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
 				switch(level.getOperationCode(computeKey)){
-				case 1: System.exit(0);
-				case 2: menu = true;
-						printMenu(terminal);
+				case 1: System.exit(0);	break;
+				case 2: level.enterMenu();	break;
 				case 3: 
 					if(level.isWon()){
 						return 1;
 					}
 					else{
 						return 2;
-					}
+					} 
 				}
 			}
 		}

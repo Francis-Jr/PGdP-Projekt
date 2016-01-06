@@ -26,17 +26,28 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Level {
 
-	private final char  heart = '\u2665',
-						frameVertical = '\u2502',
-						frameHorizontal = '\u2500',
-						frameUpperRight = '\u2510',
-						frameUpperLeft = '\u250C',
-						frameLowerRight = '\u2518',
-						frameLowerLeft = '\u2514';
+	private final static char  	heart = '\u2665',
+								frameVertical = '\u2502',
+								frameHorizontal = '\u2500',
+								frameUpperRight = '\u2510',
+								frameUpperLeft = '\u250C',
+								frameLowerRight = '\u2518',
+								frameLowerLeft = '\u2514';
 	
-	private final Color scoreBoardBgColor = Color.BLACK,
-						scoreBoardFrameColor = Color.YELLOW,
-						heartColor = Color.RED;
+	private final static String[] menuMessage = 
+		{	"",
+			"           Menu          ",
+			"",
+			"   (1) Continue Level",
+			"   (2) Save Progress",
+			"   (3) Load saved Game   ",
+			"   (4) Quit",
+			""
+		};
+	
+	private final static Color 	scoreBoardBgColor = Color.BLACK,
+								scoreBoardFrameColor = Color.YELLOW,
+								heartColor = Color.RED;
 	
 	private static final String saveGamePath = "/saves/",
 								saveGameSuffix = ".properties";
@@ -51,6 +62,7 @@ public class Level {
 	private int levelWidth, levelHeight;
 	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
 	private boolean isFrozen = false;
+	private boolean menu = false;
 	private boolean isWon = false;
 	
 	public Level(Terminal terminal, String path){
@@ -274,6 +286,12 @@ public class Level {
 		terminal.putCharacter(c);
 	}
 	
+	private void putMultipleChars(char c , int amount){
+		for(int n = 0; n < amount ; n++){
+			terminal.putCharacter(c);
+		}
+	}
+	
 	private void putCharacterTimes(char c, int n){
 		for(int i = 0 ; i < n ; i++)
 		terminal.putCharacter(c);
@@ -284,6 +302,53 @@ public class Level {
 		for(int n = 0 ; n < chars.length ; n++){
 			terminal.putCharacter(chars[n]);
 		}
+	}
+	
+	private void printMenuBox(Color color, Color bgColor , String[] message){
+		terminal.applyForegroundColor(color);
+		terminal.applyBackgroundColor(bgColor);
+		
+		int frameWidth = 1;
+		
+		//bestimme Maße & Position der Box
+		int boxWidth = 0;
+		for(String line : message){ //bestimme längste Zeile von message
+			if(line.length() > boxWidth){
+				boxWidth = line.length();
+			}
+		}
+		for(int n = 0 ; n<message.length ; n++){ //alle Zeile auf diese Länge erwitern
+			while(message[n].length() < boxWidth){
+				message[n] += " ";
+			}
+		}
+		boxWidth += 2 * frameWidth;
+		int boxHeight = message.length + 2* frameWidth;
+		
+		int boxX = (windowWidth - boxWidth) / 2, boxY = (windowHeight - boxHeight)/2; 
+		
+		//Rahmen
+		terminal.moveCursor(boxX, boxY);
+		terminal.putCharacter(frameUpperLeft);
+		putMultipleChars(frameHorizontal,boxWidth - 2);
+		terminal.putCharacter(frameUpperRight);
+			
+		for(int n = 1 ; n < boxHeight -1 ; n++){
+			putChar(frameVertical , boxX , boxY + n);
+			putChar(frameVertical , boxX + boxWidth - 1, boxY + n);
+		}
+		
+		terminal.moveCursor(boxX, boxY + boxHeight - 1);
+		terminal.putCharacter(frameLowerLeft);
+		putMultipleChars(frameHorizontal,boxWidth - 2);
+		terminal.putCharacter(frameLowerRight);
+		
+		//Message
+		for(int n = 1 ; n < boxHeight - 1 ; n++){
+			terminal.moveCursor(boxX + 1, boxY + n);
+			printString(message[n-1]);
+		}
+			
 	}
 	
 	public Player getPlayer(){
@@ -300,17 +365,18 @@ public class Level {
 		int startcolumn = 26;
 		int lastRow = terminal.getTerminalSize().getRows() - 1;
 		
-		terminal.applyBackgroundColor(Color.BLACK);
-		terminal.applyForegroundColor(won ? Color.GREEN : Color.RED);
 		
-		terminal.moveCursor(startcolumn, lastRow-2);
-		printString(won ? "You won!" : "You Lost!");
+		//Anzeigebox
 		
-		int menucolumn = 40;
-		terminal.moveCursor(menucolumn, lastRow-2);
-		printString("(1) " + (won ? "next Level" : "try again"));
-		terminal.moveCursor(menucolumn, lastRow-1);
-		printString("(2) quit");
+		String[] message = 	{		"",
+							(won ?  "      You won!" 	: "      You Lost!"),
+									"",
+									"   (1) try again    ",
+									"   (2) quit",
+									"",
+									""};	   
+		
+		printMenuBox(Color.WHITE,(won ? Color.GREEN : Color.RED),  message);
 
 		isFrozen = true;
 		for(DynamicTrap trap : dynTraps){
@@ -436,5 +502,14 @@ public class Level {
 		else if (windowPositionY > levelHeight - windowHeight - 1) 
 			windowPositionY = levelHeight - windowHeight - 1;
 		printWholeWindow();
+	}
+	
+	public void enterMenu(){
+		menu = true;
+		printMenuBox(Color.WHITE , Color.BLUE , menuMessage);
+	}
+	
+	public void continueLevel(){
+		menu = false;
 	}
 }
