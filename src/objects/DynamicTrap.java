@@ -35,7 +35,8 @@ public class DynamicTrap extends MovingGameObject{
 	public boolean canWalk(int newX, int newY) {
 		if (newX < 0 || newY < 0 || newX >= level.getWidth() || newY >= level.getHeight())
 			return false;
-		
+		if(level.isFrozen())
+			return false;
 		StaticGameObject obj = level.getObjectAt(newX, newY);
 		if (obj == null)
 			return false;
@@ -109,12 +110,17 @@ public class DynamicTrap extends MovingGameObject{
 	}
 
 	private int pickRandom(Vector<Integer> a) {
+		if(a.size() == 0) return 4;
 		return a.get((int) Math.floor((Math.random() * a.size())));
 	}
 
 	@Override
 	public void printInTerminal() {
-		terminal.moveCursor(x, y);
+		if(x < level.getWindowX() || y < level.getWindowY() || 
+				x >= level.getWindowX() + level.getWindowWidth() || 
+				y >= level.getWindowY() +  level.getWindowHeight())
+			return;
+		terminal.moveCursor(x - level.getWindowX(), y - level.getWindowY());
 		terminal.applyBackgroundColor(level.getObjectAt(x, y).getColor());
 		terminal.applyForegroundColor(getColor());
 		terminal.putCharacter(getChar());
@@ -122,7 +128,11 @@ public class DynamicTrap extends MovingGameObject{
 
 	@Override
 	public void unprint() {
-		terminal.moveCursor(x, y);
+		if(x < level.getWindowX() || y < level.getWindowY() || 
+				x >= level.getWindowX() + level.getWindowWidth() || 
+				y >= level.getWindowY() +  level.getWindowHeight())
+			return;
+		terminal.moveCursor(x - level.getWindowX(), y - level.getWindowY());
 		terminal.applyBackgroundColor(level.getObjectAt(x, y).getBgColor());
 		terminal.applyForegroundColor(level.getObjectAt(x, y).getColor());
 		terminal.putCharacter(level.getObjectAt(x, y).getChar());

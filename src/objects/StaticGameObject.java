@@ -54,12 +54,16 @@ public abstract class StaticGameObject {
 	
 	public void printInTerminal(){
 		try{
-			terminal.moveCursor(x, y);
+			terminal.moveCursor(x - level.getWindowX(), y - level.getWindowY());
 		} catch(NullPointerException e){
 			System.err.println("Nullpointer trying to print " + this.getClass().getName() + " at (" + x + "," + y +")");
 		}
 		terminal.applyBackgroundColor(bgColor);
 		terminal.applyForegroundColor(color);
 		terminal.putCharacter(charRepresentation);
+	}
+
+	public static Color getKeyColor() {
+		return keyColor;
 	}
 }

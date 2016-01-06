@@ -20,7 +20,6 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  */
 
 
-//TODO objects objektorientieren...
 public class Main {
 	
 	private static final long COMPUTE_INTERVALL = (long) (7e7);
@@ -35,7 +34,7 @@ public class Main {
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		
-		playLevel("level_small    .properties",terminal);
+		playLevel("level_big_dense.properties",terminal);
 		
 		terminal.exitPrivateMode();
 	}

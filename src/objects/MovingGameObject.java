@@ -31,11 +31,7 @@ public abstract class MovingGameObject {
 	protected Color color;
 	
 	protected Terminal terminal;
-	protected Level level;
-	
-	public void setLevel(Level lv){
-		level = lv;
-	}
+	protected Level level; 
 	
 	public abstract boolean canWalk(int newX, int newY); //TODO frozen implementierens
 	public abstract boolean hasKey();
@@ -69,5 +65,10 @@ public abstract class MovingGameObject {
 	
 	public int getY(){
 		return y;
+	}
+	
+	public void setPosition(int x ,int y){
+		this.x = x;
+		this.y = y;
 	}
 }

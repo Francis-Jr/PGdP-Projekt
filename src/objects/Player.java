@@ -73,7 +73,8 @@ public class Player extends MovingGameObject {
 	public boolean canWalk(int newX, int newY) {
 		if (newX < 0 || newY < 0 || newX >= level.getWidth() || newY >= level.getHeight())
 			return false;
-		
+		if(level.isFrozen())
+			return false;
 		StaticGameObject obj = level.getObjectAt(newX, newY);
 		if(obj instanceof Empty)
 			return canWalkEmpty;
@@ -125,7 +126,11 @@ public class Player extends MovingGameObject {
 
 	@Override
 	public void printInTerminal() {
-		terminal.moveCursor(x, y);
+		if(x < level.getWindowX() || y < level.getWindowY() || 
+				x >= level.getWindowX() + level.getWindowWidth() || 
+				y >= level.getWindowY() +  level.getWindowHeight())
+			return;
+		terminal.moveCursor(x - level.getWindowX(), y - level.getWindowY());
 		terminal.applyBackgroundColor(isOnDynamicTrap(level.getDynamicTraps()) ? dynamicTrapColor : level.getObjectAt(x, y).getColor());
 		terminal.applyForegroundColor(color);
 		terminal.putCharacter(charRepresentation);
@@ -133,7 +138,11 @@ public class Player extends MovingGameObject {
 
 	@Override
 	public void unprint() {
-		terminal.moveCursor(x, y);
+		if(x < level.getWindowX() || y < level.getWindowY() || 
+				x >= level.getWindowX() + level.getWindowWidth() || 
+				y >= level.getWindowY() +  level.getWindowHeight())
+			return;
+		terminal.moveCursor(x - level.getWindowX(), y - level.getWindowY());
 		terminal.applyBackgroundColor(level.getObjectAt(x, y).getBgColor());
 		terminal.applyForegroundColor(level.getObjectAt(x, y).getColor());
 		terminal.putCharacter(level.getObjectAt(x, y).getChar());
@@ -147,6 +156,14 @@ public class Player extends MovingGameObject {
 			}
 		}
 		return false;
+	}
+
+	public void setLives(int a) {
+		lives = a;
+		if(lives <= 0){
+			lives = 1;
+			System.err.println("[ALERT] Player.setLives() tried to set lives <= 0");
+		}
 	}
 	
 }
