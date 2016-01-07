@@ -73,7 +73,7 @@ public class Main {
 					Thread.sleep(3);
 				} catch (InterruptedException e) {e.printStackTrace();}
 				
-				computeKey = null; //computeKey wurde verarbeitet
+				computeKey = null;
 			}
 		}
 		System.err.println("[ALERT] playLevel got past endless loop... this should not happen");
@@ -91,78 +91,32 @@ public class Main {
 			if(computeKey.getKind().equals(Kind.ArrowUp)){
 				level.getPlayer().unprint();
 				level.getPlayer().move(0);
+				computeKey = null;
 			}
 			else if(computeKey.getKind().equals(Kind.ArrowDown)){
 				level.getPlayer().unprint();
 				level.getPlayer().move(2);
+				computeKey = null;
 			}
 			else if(computeKey.getKind().equals(Kind.ArrowRight)){
 				level.getPlayer().unprint();
 				level.getPlayer().move(1);
+				computeKey = null;
 			}
 			else if(computeKey.getKind().equals(Kind.ArrowLeft)){
 				level.getPlayer().unprint();
 				level.getPlayer().move(3);
+				computeKey = null;
 			}
-			else {//Player wird nicht bewegt, aber evlt etwas anderes gemacht
-				
-				/*
-				 * Operation codes:
-				 * 0 Default (do nothing)
-				 * 1 Quit Game
-				 * 2 enter Menu
-				 * 3 leave Menu (continue Level)
-				 * 4 next Level
-				 * 5 retry Level
-				 * 6 to save Menu
-				 * 7 to load Menu
-				 * 101-104 save to slot 1-4
-				 * 201-204 load from slot 1-4
-				 */
-				T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
-				switch(level.getOperationCode(computeKey)){
-				case 1: 
-					System.exit(0);	
-					break;
-				case 2: 
-					level.enterMenu();	
-					break;
-				case 3: 
-					level.continueLevel(); 
-					break;
-				case 4: 
-					levelsWon += 1;
-					level.load(terminal, levelPath + getNextLevel() + levelSuffix);
-					level.printWholeLevel();
-					level.continueLevel();
-					break;
-				case 5: 
-					level.reset();
-					level.printWholeLevel();
-					level.continueLevel();
-					break;
-				case 6: 
-					level.enterSaveMenu();
-					break;
-				case 7:
-					level.enterLoadMenu();
-					break;
-				case 101: case 102: case 103: case 104:
-					level.save(level.getOperationCode(computeKey)-100);
-					level.enterMenu();
-					break;
-				case 201: case 202: case 203: case 204:
-					level.load(level.getOperationCode(computeKey)-200, terminal);
-					level.continueLevel();
-				}
-			}
-			
 		}
 		
+
 		//move dynTraps
 		for(DynamicTrap trap : level.getDynamicTraps()){
-			trap.unprint();
-			trap.move();
+			if(!level.isFrozen()) {
+				trap.unprint();
+				trap.move();
+			}
 		}
 		
 		//collisions
@@ -171,12 +125,69 @@ public class Main {
 		}
 		
 		//print player and dyntraps
-		//if(playerMoved){
-			level.getPlayer().printInTerminal();
-		//}
+		level.getPlayer().printInTerminal();
 		for(DynamicTrap trap : level.getDynamicTraps()){
 			trap.printInTerminal();
 		}
+		
+		if(computeKey != null){ //Player wurde nicht bewegt, aber evlt etwas anderes gemacht
+			
+			/*
+			 * Operation codes:
+			 * 0 Default (do nothing)
+			 * 1 Quit Game
+			 * 2 enter Menu
+			 * 3 leave Menu (continue Level)
+			 * 4 next Level
+			 * 5 retry Level
+			 * 6 to save Menu
+			 * 7 to load Menu
+			 * 101-104 save to slot 1-4
+			 * 201-204 load from slot 1-4
+			 */
+			T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
+			switch(level.getOperationCode(computeKey)){
+			case 1: 
+				System.exit(0);	
+				break;
+			case 2: 
+				level.enterMenu();	
+				break;
+			case 3: 
+				level.continueLevel(); 
+				break;
+			case 4: 
+				levelsWon += 1;
+				level.load(terminal, levelPath + getNextLevel() + levelSuffix);
+				level.printWholeLevel();
+				level.continueLevel();
+				break;
+			case 5: 
+				level.reset();
+				level.printWholeLevel();
+				level.continueLevel();
+				break;
+			case 6: 
+				level.enterSaveMenu();
+				break;
+			case 7:
+				level.enterLoadMenu();
+				break;
+			case 8:
+				level.printHowToPlay();
+				break;
+			case 101: case 102: case 103: case 104:
+				level.save(level.getOperationCode(computeKey)-100);
+				level.enterMenu();
+				break;
+			case 201: case 202: case 203: case 204:
+				level.load(level.getOperationCode(computeKey)-200, terminal);
+				level.continueLevel();
+				break;
+			}
+		}
+		
+		
 	}
 
 	private static String getNextLevel() {

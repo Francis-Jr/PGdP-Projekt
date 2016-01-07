@@ -19,6 +19,7 @@ public class T {
 		case 5: return "retry level";
 		case 6: return "save level";
 		case 7: return "load level";
+		case 8: return "how to play";
 		case 101: return "saving to 1";
 		case 102: return "saving to 2";
 		case 103: return "saving to 3";

@@ -7,7 +7,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public abstract class StaticGameObject {
 	
-	//TODO Klasse aufräumen
+	//TODO Klasse aufrï¿½umen
 	
 	protected static final Color	defaultColor = Color.WHITE,
 									defaultBgColor = Color.BLACK,

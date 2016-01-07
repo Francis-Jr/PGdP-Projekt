@@ -116,6 +116,7 @@ public class DynamicTrap extends MovingGameObject{
 
 	@Override
 	public void printInTerminal() {
+		if(level.isFrozen()) return;
 		if(x < level.getWindowX() || y < level.getWindowY() || 
 				x >= level.getWindowX() + level.getWindowWidth() || 
 				y >= level.getWindowY() +  level.getWindowHeight())
@@ -128,6 +129,7 @@ public class DynamicTrap extends MovingGameObject{
 
 	@Override
 	public void unprint() {
+		if(level.isFrozen()) return;
 		if(x < level.getWindowX() || y < level.getWindowY() || 
 				x >= level.getWindowX() + level.getWindowWidth() || 
 				y >= level.getWindowY() +  level.getWindowHeight())

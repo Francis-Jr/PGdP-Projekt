@@ -43,8 +43,21 @@ public class Level {
 			"   (1) Continue Level",
 			"   (2) Save Progress",
 			"   (3) Load saved Game   ",
-			"   (4) Quit",
+			"   (4) How to play?      ",
+			"   (5) Quit",
 			""
+		},
+		howToPlayText = 
+		{"",
+		"        How to play       ",
+		"",
+		"    o Player   $ Key      ",
+		"    # Trap     + Enemy    ",
+		"    E Exit     x Wall     ",
+		"    x Levelborder         ",
+		"",
+		"   find a key, then get   ",
+		"  to the exit. dont die.  "
 		},
 		saveMenuMessage = 
 			{	"",
@@ -74,7 +87,9 @@ public class Level {
 	private final static Color 	scoreBoardBgColor = Color.BLACK,
 								scoreBoardFrameColor = Color.YELLOW,
 								heartColor = Color.RED,
-								levelScoreColor = Color.WHITE;
+								levelScoreColor = Color.WHITE,
+								menuTextColor = Color.WHITE,
+								menuBgColor = Color.BLUE;
 	
 	private static final String saveGamePath = "saves/",
 								saveGameSuffix = ".properties";
@@ -329,6 +344,10 @@ public class Level {
 				levelScoreStartColumn,lastRow - (scoreBoardHeight - 1) + 1);
 	}
 
+	public void printHowToPlay() {
+		printTextBox(menuTextColor,menuBgColor,howToPlayText,0,0);
+	}
+
 	private String getHeartString() {
 		String returnString =  " ";
 		for(int n = 0 ; n < player.getLives() ; n++){
@@ -457,7 +476,7 @@ public class Level {
 		
 		printMenuBox(Color.WHITE,(won ? Color.GREEN : Color.RED),  message);
 
-		isFrozen = true;
+		setFrozen(true);;
 		for(DynamicTrap trap : dynTraps){
 			trap.printInTerminal();;
 		}
@@ -473,6 +492,7 @@ public class Level {
 	 * 5 retry Level
 	 * 6 to save Menu
 	 * 7 to load Menu
+	 * 8 How to play
 	 * 101-104 save to slot 1-4
 	 * 201-204 load from slot 1-4
 	 * @param key
@@ -490,7 +510,8 @@ public class Level {
 				case '1': return 3;
 				case '2': return 6;
 				case '3': return 7;
-				case '4': return 1;
+				case '4': return 8;
+				case '5': return 1;
 				}
 			}
 		}
@@ -660,16 +681,16 @@ public class Level {
 	}
 	
 	public void enterMenu(){
-		isFrozen = true;
+		setFrozen(true);
 		menu = true;
 		saveMenu = false;
 		loadMenu = false;
 		printWholeLevel();
-		printMenuBox(Color.WHITE , Color.BLUE , menuMessage);
+		printMenuBox(menuTextColor , menuBgColor , menuMessage);
 	}
 	
 	public void continueLevel(){
-		isFrozen = false;
+		setFrozen(false);
 		menu = false;
 		saveMenu = false;
 		loadMenu = false;
@@ -678,7 +699,7 @@ public class Level {
 	}
 
 	public void enterSaveMenu() {
-		isFrozen = true;
+		setFrozen(true);
 		menu = false;
 		loadMenu = false;
 		saveMenu = true;
@@ -688,7 +709,7 @@ public class Level {
 	}
 
 	public void enterLoadMenu() {
-		isFrozen = true;
+		setFrozen(true);
 		menu = false;
 		saveMenu = false;
 		loadMenu = true;
@@ -703,5 +724,11 @@ public class Level {
 	public void reset() {
 		init(terminal, sourcePath);
 		printWholeLevel();
+	}
+	
+	private void setFrozen(boolean a){
+		if(a)
+			printWholeLevel();
+		isFrozen = a;
 	}
 }
