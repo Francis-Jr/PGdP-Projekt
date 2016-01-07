@@ -28,5 +28,6 @@ public class ExitKey extends StaticGameObject {
 	public void take(){ //"untake" not possible.
 		isTaken = true;
 		charRepresentation = emptyChar;
+		color = defaultBgColor;
 	}
 }

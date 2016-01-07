@@ -24,18 +24,24 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 public class Main {
 	
 	private static final long COMPUTE_INTERVALL = (long) (7e7);
+	private static final String levelPath = "levels/",
+								levelSuffix = ".properties";
 	
-	private static boolean menu = false;
+	private static final String[] levels = {"level_small","level_big_sparse","level_big_dense"};
 	
 	private static long last = System.nanoTime(), delta = 0, computeCounter = 0;
+	
+	private static Level level;
+	private static int levelsWon = 0;
 	
 	public static void main(String[] args){
 		Terminal terminal = TerminalFacade.createSwingTerminal();
 		terminal.enterPrivateMode();
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
+		terminal.clearScreen();
 		
-		playLevel("level_small.properties",terminal);
+		playLevel(levelPath + levels[0] + levelSuffix,terminal);
 		
 		terminal.exitPrivateMode();
 	}
@@ -44,10 +50,9 @@ public class Main {
 	 * 
 	 * @param path
 	 * @param terminal
-	 * @return level was one or lost
 	 */
-	public static boolean playLevel(String path, Terminal terminal){
-		Level level = new Level(terminal, path);
+	public static void playLevel(String path, Terminal terminal){
+		level = new Level(terminal, path);
 		Key key;
 		Key computeKey = null;
 		
@@ -62,15 +67,8 @@ public class Main {
 			
 			if(computeCounter > COMPUTE_INTERVALL){
 				computeCounter = 0;
-				if(menu){
-					computeMenu(terminal,computeKey);
-				}
-				else{
-					switch(computeLevel(terminal,level,computeKey)){
-					case 1: return true;
-					case 2: return false;
-					}
-				}
+				computeLevel(terminal,level,computeKey);
+				
 				try {
 					Thread.sleep(3);
 				} catch (InterruptedException e) {e.printStackTrace();}
@@ -79,7 +77,6 @@ public class Main {
 			}
 		}
 		System.err.println("[ALERT] playLevel got past endless loop... this should not happen");
-		return false;
 	}
 
 	/**
@@ -87,9 +84,9 @@ public class Main {
 	 * @param terminal
 	 * @param level
 	 * @param computeKey
-	 * @return 0 default, 1 won, 2 lost
 	 */
-	private static int computeLevel(Terminal terminal, Level level, Key computeKey) {
+	private static void computeLevel(Terminal terminal, Level level, Key computeKey) {
+		
 		if(computeKey != null){
 			if(computeKey.getKind().equals(Kind.ArrowUp)){
 				level.getPlayer().unprint();
@@ -109,21 +106,57 @@ public class Main {
 			}
 			else {//Player wird nicht bewegt, aber evlt etwas anderes gemacht
 				
-				level.getPlayer().printInTerminal(); 
-				
+				/*
+				 * Operation codes:
+				 * 0 Default (do nothing)
+				 * 1 Quit Game
+				 * 2 enter Menu
+				 * 3 leave Menu (continue Level)
+				 * 4 next Level
+				 * 5 retry Level
+				 * 6 to save Menu
+				 * 7 to load Menu
+				 * 101-104 save to slot 1-4
+				 * 201-204 load from slot 1-4
+				 */
 				T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
 				switch(level.getOperationCode(computeKey)){
-				case 1: System.exit(0);	break;
-				case 2: level.enterMenu();	break;
+				case 1: 
+					System.exit(0);	
+					break;
+				case 2: 
+					level.enterMenu();	
+					break;
 				case 3: 
-					if(level.isWon()){
-						return 1;
-					}
-					else{
-						return 2;
-					} 
+					level.continueLevel(); 
+					break;
+				case 4: 
+					levelsWon += 1;
+					level.load(terminal, levelPath + getNextLevel() + levelSuffix);
+					level.printWholeLevel();
+					level.continueLevel();
+					break;
+				case 5: 
+					level.reset();
+					level.printWholeLevel();
+					level.continueLevel();
+					break;
+				case 6: 
+					level.enterSaveMenu();
+					break;
+				case 7:
+					level.enterLoadMenu();
+					break;
+				case 101: case 102: case 103: case 104:
+					level.save(level.getOperationCode(computeKey)-100);
+					level.enterMenu();
+					break;
+				case 201: case 202: case 203: case 204:
+					level.load(level.getOperationCode(computeKey)-200, terminal);
+					level.continueLevel();
 				}
 			}
+			
 		}
 		
 		//move dynTraps
@@ -138,30 +171,29 @@ public class Main {
 		}
 		
 		//print player and dyntraps
-		level.getPlayer().printInTerminal();
+		//if(playerMoved){
+			level.getPlayer().printInTerminal();
+		//}
 		for(DynamicTrap trap : level.getDynamicTraps()){
 			trap.printInTerminal();
 		}
-		
-		return 0;
 	}
 
-	private static void printMenu(Terminal terminal) {
-		// TODO Auto-generated method stub
-		
+	private static String getNextLevel() {
+		return levels[levelsWon % levels.length];
 	}
-
-	/**
-	 * 
-	 */
-	private static void computeMenu(Terminal terminal, Key computeKey) {
-		// TODO Auto-generated method stub
-	}
-
 
 	private static void computeDelta() {
 		delta = System.nanoTime() - last;
 		last = System.nanoTime();
+	}
+	
+	public static int getLevelsWon(){
+		return levelsWon;
+	}
+	
+	public static void setLevelsWon(int a){
+		levelsWon = a;
 	}
 	
 }
