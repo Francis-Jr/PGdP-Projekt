@@ -242,66 +242,12 @@ public class Level {
 		printTextBox(scoreBoardFrameColor,scoreBoardBgColor,
 				getEmptyStringArray(terminal.getTerminalSize().getColumns()-2,scoreBoardHeight-2),
 				0,lastRow - (scoreBoardHeight - 1));
-				
-		
-		/*terminal.applyForegroundColor(scoreBoardFrameColor);
-		terminal.applyBackgroundColor(scoreBoardBgColor);
-		terminal.moveCursor(0, lastRow-4);
-		
-		terminal.putCharacter(frameUpperLeft);
-		for(int n = 0 ; n < terminal.getTerminalSize().getColumns() - 2 ; n++){
-			terminal.putCharacter(frameHorizontal);
-		}
-		terminal.putCharacter(frameUpperRight);
-
-		putChar(frameVertical, 0, lastRow-3);
-		putChar(frameVertical, 0, lastRow-2);
-		putChar(frameVertical, 0, lastRow-1);
-		putChar(frameVertical, lastColumn, lastRow-3);
-		putChar(frameVertical, lastColumn, lastRow-2);
-		putChar(frameVertical, lastColumn, lastRow-1);
-		
-		terminal.moveCursor(0, lastRow);
-		terminal.putCharacter(frameLowerLeft);
-		for(int n = 0 ; n < terminal.getTerminalSize().getColumns() - 2 ; n++){
-			terminal.putCharacter(frameHorizontal);
-		}
-		terminal.putCharacter(frameLowerRight); TODO final remove */
 		
 		//Herzen
 			int heartStartColumn = 3;
 			printTextBox(heartColor,scoreBoardBgColor,
 					getHeartString(),
 					heartStartColumn,lastRow - (scoreBoardHeight - 1) + 1);
-						
-		
-		/*terminal.applyForegroundColor(heartColor);
-		terminal.applyBackgroundColor(scoreBoardBgColor);
-		
-		terminal.moveCursor(heartStartColumn, lastRow-3);
-		terminal.putCharacter(frameUpperLeft);
-		putCharacterTimes(frameHorizontal,11);
-		terminal.putCharacter(frameUpperRight);
-		
-		terminal.moveCursor(heartStartColumn, lastRow - 2);
-		terminal.putCharacter(frameVertical);
-		terminal.putCharacter(' ');
-		for(int n = 0 ; n < player.getLives() ; n++){
-			terminal.putCharacter(heart);
-			terminal.putCharacter(' ');
-		}
-		if(player.getLives() >= 0){
-			for(int n = 0 ; n < 5 - player.getLives() ; n++){
-				terminal.putCharacter(' ');
-				terminal.putCharacter(' ');
-			}
-		}
-		terminal.putCharacter(frameVertical);
-		
-		terminal.moveCursor(heartStartColumn, lastRow-1);
-		terminal.putCharacter(frameLowerLeft);
-		putCharacterTimes(frameHorizontal,11);
-		terminal.putCharacter(frameLowerRight);TODO final remove*/
 			
 		
 		//Schl�ssel
@@ -311,31 +257,6 @@ public class Level {
 				" " + (player.hasKey() ? StaticGameObject.getKeyChar() : " ") + " ",
 				keyStartColumn,lastRow - (scoreBoardHeight - 1) + 1 );
 		
-		
-		/*
-		terminal.applyForegroundColor(StaticGameObject.getKeyColor()); 
-		terminal.applyBackgroundColor(scoreBoardBgColor);
-		
-		terminal.moveCursor(keyStartColumn, lastRow-2);
-		terminal.putCharacter(frameVertical);
-		terminal.putCharacter(' ');
-		terminal.putCharacter(player.hasKey() ? StaticGameObject.getKeyChar() : ' ');
-		terminal.putCharacter(' ');
-		terminal.putCharacter(frameVertical);
-		
-		terminal.moveCursor(keyStartColumn, lastRow-3);
-		terminal.putCharacter(frameUpperLeft);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameUpperRight);
-		
-		terminal.moveCursor(keyStartColumn, lastRow-1);
-		terminal.putCharacter(frameLowerLeft);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameHorizontal);
-		terminal.putCharacter(frameLowerRight);TODO final remove */
 		
 		//level score
 		int levelScoreStartColumn = 30;
@@ -462,6 +383,7 @@ public class Level {
 	}
 	
 	public void endLevel(boolean won){
+		T.p("ending level " + won);
 		isWon = won;
 		
 		//Anzeigebox
@@ -474,12 +396,12 @@ public class Level {
 									"",
 									""};	   
 		
-		printMenuBox(Color.WHITE,(won ? Color.GREEN : Color.RED),  message);
-
-		setFrozen(true);;
+		setFrozen(true);
 		for(DynamicTrap trap : dynTraps){
 			trap.printInTerminal();;
 		}
+		printMenuBox(Color.WHITE,(won ? Color.GREEN : Color.RED),  message);
+
 	}
 	
 	/**

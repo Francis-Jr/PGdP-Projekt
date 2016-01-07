@@ -27,7 +27,7 @@ public class Main {
 	private static final String levelPath = "levels/",
 								levelSuffix = ".properties";
 	
-	private static final String[] levels = {"level_small","level_big_sparse","level_big_dense"};
+	private static final String[] levels = {"level_small","level2","level3"};
 	
 	private static long last = System.nanoTime(), delta = 0, computeCounter = 0;
 	
@@ -40,6 +40,7 @@ public class Main {
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		terminal.clearScreen();
+		
 		
 		playLevel(levelPath + levels[0] + levelSuffix,terminal);
 		
@@ -110,25 +111,6 @@ public class Main {
 			}
 		}
 		
-
-		//move dynTraps
-		for(DynamicTrap trap : level.getDynamicTraps()){
-			if(!level.isFrozen()) {
-				trap.unprint();
-				trap.move();
-			}
-		}
-		
-		//collisions
-		if(level.getPlayer().isOnDynamicTrap(level.getDynamicTraps())){
-			level.getPlayer().hurt(1);
-		}
-		
-		//print player and dyntraps
-		level.getPlayer().printInTerminal();
-		for(DynamicTrap trap : level.getDynamicTraps()){
-			trap.printInTerminal();
-		}
 		
 		if(computeKey != null){ //Player wurde nicht bewegt, aber evlt etwas anderes gemacht
 			
@@ -187,6 +169,24 @@ public class Main {
 			}
 		}
 		
+		//move dynTraps
+		for(DynamicTrap trap : level.getDynamicTraps()){
+			if(!level.isFrozen()) {
+				trap.unprint();
+				trap.move();
+			}
+		}
+		
+		//collisions
+		if(level.getPlayer().isOnDynamicTrap(level.getDynamicTraps())){
+			level.getPlayer().hurt(1);
+		}
+		
+		//print player and dyntraps
+		level.getPlayer().printInTerminal();
+		for(DynamicTrap trap : level.getDynamicTraps()){
+			trap.printInTerminal();
+		}
 		
 	}
 
