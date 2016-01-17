@@ -27,8 +27,6 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Level {
-
-	private final static char  	heart = '\u2665';
 	
 	private final static String[] menuMessage = 
 		{	"",
@@ -93,15 +91,12 @@ public class Level {
 				""};
 	
 	private TextBox menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox;
-	private TextBox[] textBoxes = {menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox};
+	private ScoreBoard scoreBoard;
+	private LevelOverlay[] textBoxes = {menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox};
 	
 	private final static int scoreBoardHeight = 5;
 	
-	private final static Color 	scoreBoardBgColor = Color.BLACK,
-								scoreBoardFrameColor = Color.YELLOW,
-								heartColor = Color.RED,
-								levelScoreColor = Color.WHITE,
-								menuTextColor = Color.WHITE,
+	private final static Color 	menuTextColor = Color.WHITE,
 								menuBgColor = Color.BLUE,
 								wonColor = Color.GREEN,
 								lostColor = Color.RED;
@@ -126,8 +121,7 @@ public class Level {
 	
 	public Level(Terminal terminal, String path){
 		init(terminal,path);
-		//Alle zeichen ins Terminal schreiben
-			printWholeLevel();
+		printWholeLevel();
 	}
 	
 	private void init(Terminal terminal, String path){
@@ -197,13 +191,14 @@ public class Level {
 			if(windowPositionY < 0 ) windowPositionY = 0;
 			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
 			
-		//TextBoxes initialisieren, TODO lesezeichen
-			menuBox = new TextBox(menuMessage, menuTextColor, menuBgColor, terminal, this);
-			howToPlayBox = new TextBox(howToPlayText, menuTextColor, menuBgColor, 0 , 0 ,terminal, this);
-			saveMenuBox = new TextBox(saveMenuMessage , menuTextColor, menuBgColor, terminal, this);
-			loadMenuBox = new TextBox(loadMenuMessage , menuTextColor, menuBgColor, terminal, this);
-			wonBox = new TextBox(wonMessage , menuTextColor , wonColor , terminal , this);
-			lostBox =  new TextBox(lostMessage , menuTextColor , lostColor , terminal , this);
+		//TextBoxes initialisieren,
+			menuBox = new TextBox(menuMessage, menuTextColor, menuBgColor, terminal);
+			howToPlayBox = new TextBox(howToPlayText, menuTextColor, menuBgColor, 0 , 0 , terminal);
+			saveMenuBox = new TextBox(saveMenuMessage , menuTextColor, menuBgColor, terminal);
+			loadMenuBox = new TextBox(loadMenuMessage , menuTextColor, menuBgColor, terminal);
+			wonBox = new TextBox(wonMessage , menuTextColor , wonColor , terminal);
+			lostBox =  new TextBox(lostMessage , menuTextColor , lostColor , terminal);
+			scoreBoard = new ScoreBoard(terminal);
 	}
 
 	public StaticGameObject getObjectAt(int x , int y){
@@ -254,74 +249,17 @@ public class Level {
 			}
 			
 		//Scoreboard
-			printScoreboard();
+			scoreBoard.print(this);
 	}
 	
 	public void unPrintActiveTextBoxes(){
-		for(TextBox box : textBoxes){
-			box.unPrint();
+		for(LevelOverlay ol : textBoxes){
+			ol.unPrint(this);
 		}
 	}
 	
-	public void printScoreboard(){
-		
-		//TODO auslagern
-		
-		int lastRow = terminal.getTerminalSize().getRows() - 1;
-		
-		//Rahmen
-		printTextBox(scoreBoardFrameColor,scoreBoardBgColor,
-				getEmptyStringArray(terminal.getTerminalSize().getColumns()-2,scoreBoardHeight-2),
-				0,lastRow - (scoreBoardHeight - 1));
-		
-		//Herzen
-			int heartStartColumn = 3;
-			printTextBox(heartColor,scoreBoardBgColor,
-					getHeartString(),
-					heartStartColumn,lastRow - (scoreBoardHeight - 1) + 1);
-			
-		
-		//Schl�ssel
-		int keyStartColumn = 18;
-		
-		printTextBox(StaticGameObject.getKeyColor(),scoreBoardBgColor,
-				" " + (player.hasKey() ? StaticGameObject.getKeyChar() : " ") + " ",
-				keyStartColumn,lastRow - (scoreBoardHeight - 1) + 1 );
-		
-		
-		//level score
-		int levelScoreStartColumn = 30;
-		printTextBox(levelScoreColor,scoreBoardBgColor,
-				" " + Main.getLevelsWon() + " ",
-				levelScoreStartColumn,lastRow - (scoreBoardHeight - 1) + 1);
-	}
-
 	public void printHowToPlay() {
-		howToPlayBox.printInTerminal();
-	}
-
-	private String getHeartString() {
-		String returnString =  " ";
-		for(int n = 0 ; n < player.getLives() ; n++){
-			returnString = returnString  + heart + " ";
-		}
-		for(int n = 0 ; n < 5 - player.getLives() ; n++){
-			returnString = returnString + "  ";
-		}
-		
-		return returnString;
-	}
-
-	private String[] getEmptyStringArray(int lineLength, int lines) {
-		String[] returnArray = new String[lines];
-		String line = "";
-		while(line.length() < lineLength){
-			line = line + " ";
-		}
-		for(int n = 0 ; n < returnArray.length ; n++){
-			returnArray[n] = line;
-		}
-		return returnArray;
+		howToPlayBox.print();
 	}
 	
 	public Player getPlayer(){
@@ -340,11 +278,15 @@ public class Level {
 			trap.printInTerminal();;
 		}
 		if(won){
-			wonBox.printInTerminal();
+			wonBox.print();
 		}
 		else{
-			lostBox.printInTerminal();
+			lostBox.print();
 		}
+	}
+	
+	public Terminal getTerminal(){
+		return terminal;
 	}
 	
 	/**
@@ -550,7 +492,7 @@ public class Level {
 		menu = true;
 		saveMenu = false;
 		loadMenu = false;
-		menuBox.printInTerminal();
+		menuBox.print();
 	}
 	
 	public void continueLevel(){
@@ -558,8 +500,7 @@ public class Level {
 		menu = false;
 		saveMenu = false;
 		loadMenu = false;
-		
-		printWholeLevel();
+		unPrintActiveTextBoxes();
 	}
 
 	public void enterSaveMenu() {
@@ -567,7 +508,7 @@ public class Level {
 		menu = false;
 		loadMenu = false;
 		saveMenu = true;
-		saveMenuBox.printInTerminal();
+		saveMenuBox.print();
 	}
 
 	public void enterLoadMenu() {
@@ -575,7 +516,7 @@ public class Level {
 		menu = false;
 		saveMenu = false;
 		loadMenu = true;
-		loadMenuBox.printInTerminal();
+		loadMenuBox.print();
 	}
 
 	/**
@@ -590,5 +531,9 @@ public class Level {
 		if(a)
 			printWholeLevel();
 		isFrozen = a;
+	}
+
+	public void updateScoreBoard() {
+		scoreBoard.update(this);
 	}
 }

@@ -3,7 +3,7 @@ package level;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
-public class TextBox {
+public class TextBox implements LevelOverlay{
 
 	private final static char	frameVertical = '\u2502',
 								frameHorizontal = '\u2500',
@@ -14,33 +14,30 @@ public class TextBox {
 	
 	private String[] message;
 	private Terminal terminal;
-	private Level level;
 	
 	private Color fgColor, bgColor;
 	private int positionX, positionY, width, height;
 	
 	private boolean active = false;
 	
-	public TextBox(String[] msg, Color foreGround , Color backGround , int x, int y,Terminal term, Level lv){
+	public TextBox(String[] msg, Color foreGround , Color backGround , int x, int y,Terminal terminal){
 		message = msg;
 		fgColor = foreGround;
 		bgColor = backGround;
 		positionX = x;
 		positionY = y;
-		terminal = term;
-		level = lv;
+		this.terminal = terminal;
 		this.setSize();
 	}
 	
-	public TextBox(String[] msg, Color color, Color bgColor , Terminal term, Level lv){
+	public TextBox(String[] msg, Color color, Color bgColor,Terminal terminal){
 		message = msg;
 		fgColor = color;
 		this.bgColor = bgColor;
 		this.setSize();
 		positionX = (terminal.getTerminalSize().getColumns() - width)/2;
 		positionY = (terminal.getTerminalSize().getRows() - height)/2;
-		terminal = term;
-		level = lv;
+		this.terminal = terminal;
 	}
 	
 	private void setSize(){
@@ -59,7 +56,7 @@ public class TextBox {
 		height = message.length + 2; // 2 Zeilen für den Rand
 	}
 	
-	public void printInTerminal(){
+	public void print(){
 		active = true;
 		
 		terminal.applyForegroundColor(fgColor);
@@ -83,20 +80,31 @@ public class TextBox {
 			terminal.putCharacter(frameLowerRight);
 			
 			
-		//Message
-			for(int n = 1 ; n < height - 1 ; n++){
-				terminal.moveCursor(positionX + 1, positionY + n);
-				printString(message[n-1]);
-			}
+		reprintText();
 	}
 	
-	public void unPrint(){
+	public void unPrint(Level level){
 		active = false;
 	
 		for(int x = positionX ; x < positionX + width ; x++){
 			for(int y = positionY ; y < positionY + height ; y++){
 				level.getObjectAt(x, y).printInTerminal();
 			}
+		}
+	}
+	
+	public void setText(String[] newText){
+		 message = newText;
+		 setSize();
+	}
+	
+	public void reprintText(){
+		terminal.applyForegroundColor(fgColor);
+		terminal.applyBackgroundColor(bgColor);
+		
+		for(int n = 1 ; n < height - 1 ; n++){
+			terminal.moveCursor(positionX + 1, positionY + n);
+			printString(message[n-1]);
 		}
 	}
 	

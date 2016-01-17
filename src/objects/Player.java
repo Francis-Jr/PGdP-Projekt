@@ -10,7 +10,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Player extends MovingGameObject {
 
-	private static final int START_LIVES = 5;
+	private static final int MAX_LIVES = 5;
 	private static final boolean START_WITH_KEY = false;
 	
 	private boolean hasKey;
@@ -22,7 +22,7 @@ public class Player extends MovingGameObject {
 		terminal = term;
 		level = lv;
 		
-		lives = START_LIVES;
+		lives = MAX_LIVES;
 		hasKey = START_WITH_KEY;
 		
 		color = playerColor;
@@ -104,7 +104,7 @@ public class Player extends MovingGameObject {
 	@Override
 	public boolean tryGiveKey() {
 		hasKey = true;
-		level.printScoreboard();
+		level.updateScoreBoard();
 		return true;
 	}
 
@@ -114,7 +114,7 @@ public class Player extends MovingGameObject {
 		if(lives < 0){
 			lives = 0;
 		}
-		level.printScoreboard();
+		level.updateScoreBoard();
 		if(lives == 0){
 			level.endLevel(false);
 		}
@@ -164,6 +164,10 @@ public class Player extends MovingGameObject {
 			lives = 1;
 			System.err.println("[ALERT] Player.setLives() tried to set lives <= 0");
 		}
+	}
+
+	public static int getMaxLives() {
+		return MAX_LIVES; 
 	}
 	
 }
