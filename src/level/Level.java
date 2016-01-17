@@ -28,13 +28,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 public class Level {
 
-	private final static char  	heart = '\u2665',
-								frameVertical = '\u2502',
-								frameHorizontal = '\u2500',
-								frameUpperRight = '\u2510',
-								frameUpperLeft = '\u250C',
-								frameLowerRight = '\u2518',
-								frameLowerLeft = '\u2514';
+	private final static char  	heart = '\u2665';
 	
 	private final static String[] menuMessage = 
 		{	"",
@@ -80,7 +74,26 @@ public class Level {
 				"   (4)  Load from Slot 4",
 				"   Esc  back to Menu",
 				""
-			};
+			},
+		wonMessage = 
+			{	"",
+				"      You won!",
+				"",
+				"   (1) next level",
+				"   (2) quit        ",
+				"",
+				""},
+		lostMessage = 
+			{	"",
+				"      You Lost!",
+				"",
+				"   (1) try again",
+				"   (2) quit        ",
+				"",
+				""};
+	
+	private TextBox menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox;
+	private TextBox[] textBoxes = {menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox};
 	
 	private final static int scoreBoardHeight = 5;
 	
@@ -89,7 +102,9 @@ public class Level {
 								heartColor = Color.RED,
 								levelScoreColor = Color.WHITE,
 								menuTextColor = Color.WHITE,
-								menuBgColor = Color.BLUE;
+								menuBgColor = Color.BLUE,
+								wonColor = Color.GREEN,
+								lostColor = Color.RED;
 	
 	private static final String saveGamePath = "saves/",
 								saveGameSuffix = ".properties";
@@ -181,6 +196,14 @@ public class Level {
 			else if (windowPositionX > levelWidth - windowWidth - 1) windowPositionX = levelWidth - windowWidth - 1;
 			if(windowPositionY < 0 ) windowPositionY = 0;
 			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
+			
+		//TextBoxes initialisieren, TODO lesezeichen
+			menuBox = new TextBox(menuMessage, menuTextColor, menuBgColor, terminal, this);
+			howToPlayBox = new TextBox(howToPlayText, menuTextColor, menuBgColor, 0 , 0 ,terminal, this);
+			saveMenuBox = new TextBox(saveMenuMessage , menuTextColor, menuBgColor, terminal, this);
+			loadMenuBox = new TextBox(loadMenuMessage , menuTextColor, menuBgColor, terminal, this);
+			wonBox = new TextBox(wonMessage , menuTextColor , wonColor , terminal , this);
+			lostBox =  new TextBox(lostMessage , menuTextColor , lostColor , terminal , this);
 	}
 
 	public StaticGameObject getObjectAt(int x , int y){
@@ -234,7 +257,15 @@ public class Level {
 			printScoreboard();
 	}
 	
+	public void unPrintActiveTextBoxes(){
+		for(TextBox box : textBoxes){
+			box.unPrint();
+		}
+	}
+	
 	public void printScoreboard(){
+		
+		//TODO auslagern
 		
 		int lastRow = terminal.getTerminalSize().getRows() - 1;
 		
@@ -266,7 +297,7 @@ public class Level {
 	}
 
 	public void printHowToPlay() {
-		printTextBox(menuTextColor,menuBgColor,howToPlayText,0,0);
+		howToPlayBox.printInTerminal();
 	}
 
 	private String getHeartString() {
@@ -292,87 +323,6 @@ public class Level {
 		}
 		return returnArray;
 	}
-
-	private void putChar(char c, int x, int y){
-		terminal.moveCursor(x, y);
-		terminal.putCharacter(c);
-	}
-	
-	private void putMultipleChars(char c , int amount){
-		for(int n = 0; n < amount ; n++){
-			terminal.putCharacter(c);
-		}
-	}
-	
-	private void printString(String text){
-		char[] chars = text.toCharArray();
-		for(int n = 0 ; n < chars.length ; n++){
-			terminal.putCharacter(chars[n]);
-		}
-	}
-	
-	private void printTextBox(Color color, Color bgColor, String text, int positionX, int postionY) {
-		String[] textArray = {text};
-		printTextBox(color, bgColor, textArray, positionX, postionY);
-	}
-
-	private void printTextBox(Color color, Color bgColor, String[] text, int positionX, int postionY){
-		terminal.applyForegroundColor(color);
-		terminal.applyBackgroundColor(bgColor);
-
-		
-		//bestimme Maße & Position der Box
-		int boxWidth = 0;
-		for(String line : text){ //bestimme längste Zeile von message
-			if(line.length() > boxWidth){
-				boxWidth = line.length();
-			}
-		}
-		for(int n = 0 ; n<text.length ; n++){ //alle Zeile auf diese Länge erwitern
-			while(text[n].length() < boxWidth){
-				text[n] += " ";
-			}
-		}
-		boxWidth += 2;
-		int boxHeight = text.length + 2;
-		
-		 
-		
-		//Rahmen
-		terminal.moveCursor(positionX, postionY);
-		terminal.putCharacter(frameUpperLeft);
-		putMultipleChars(frameHorizontal,boxWidth - 2);
-		terminal.putCharacter(frameUpperRight);
-			
-		for(int n = 1 ; n < boxHeight -1 ; n++){
-			putChar(frameVertical , positionX , postionY + n);
-			putChar(frameVertical , positionX + boxWidth - 1, postionY + n);
-		}
-		
-		terminal.moveCursor(positionX, postionY + boxHeight - 1);
-		terminal.putCharacter(frameLowerLeft);
-		putMultipleChars(frameHorizontal,boxWidth - 2);
-		terminal.putCharacter(frameLowerRight);
-		
-		//Message
-		for(int n = 1 ; n < boxHeight - 1 ; n++){
-			terminal.moveCursor(positionX + 1, postionY + n);
-			printString(text[n-1]);
-		}
-			
-	}
-	
-	private void printMenuBox(Color color, Color bgColor , String[] message){
-		int boxWidth = 0;
-		for(String line : message){ //bestimme längste Zeile von message
-			if(line.length() > boxWidth){
-				boxWidth = line.length();
-			}
-		}
-		boxWidth += 2;
-		int boxHeight = message.length + 2;
-		printTextBox(color,bgColor,message, (windowWidth - boxWidth) / 2, (windowHeight - boxHeight)/2);
-	}
 	
 	public Player getPlayer(){
 		return player;
@@ -384,24 +334,17 @@ public class Level {
 	
 	public void endLevel(boolean won){
 		T.p("ending level " + won);
-		isWon = won;
-		
-		//Anzeigebox
-		
-		String[] message = 	{		"",
-							(won ?  "      You won!" 	: "      You Lost!"),
-									"",
-							(won ?  "   (1) next level" :  "   (1) try again"),
-									"   (2) quit        ",
-									"",
-									""};	   
-		
+		isWon = won;   
 		setFrozen(true);
 		for(DynamicTrap trap : dynTraps){
 			trap.printInTerminal();;
 		}
-		printMenuBox(Color.WHITE,(won ? Color.GREEN : Color.RED),  message);
-
+		if(won){
+			wonBox.printInTerminal();
+		}
+		else{
+			lostBox.printInTerminal();
+		}
 	}
 	
 	/**
@@ -607,8 +550,7 @@ public class Level {
 		menu = true;
 		saveMenu = false;
 		loadMenu = false;
-		printWholeLevel();
-		printMenuBox(menuTextColor , menuBgColor , menuMessage);
+		menuBox.printInTerminal();
 	}
 	
 	public void continueLevel(){
@@ -625,9 +567,7 @@ public class Level {
 		menu = false;
 		loadMenu = false;
 		saveMenu = true;
-		
-		printWholeLevel();
-		printMenuBox(Color.WHITE , Color.BLUE , saveMenuMessage);
+		saveMenuBox.printInTerminal();
 	}
 
 	public void enterLoadMenu() {
@@ -635,9 +575,7 @@ public class Level {
 		menu = false;
 		saveMenu = false;
 		loadMenu = true;
-		
-		printWholeLevel();
-		printMenuBox(Color.WHITE , Color.BLUE , loadMenuMessage);
+		loadMenuBox.printInTerminal();
 	}
 
 	/**

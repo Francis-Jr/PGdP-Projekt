@@ -19,7 +19,6 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  *  
  */
 
-//TODO Level handles Menu on its own!
 
 public class Main {
 	
@@ -37,13 +36,13 @@ public class Main {
 	public static void main(String[] args){
 		Terminal terminal = TerminalFacade.createSwingTerminal();
 		terminal.enterPrivateMode();
+		
 		terminal.setCursorVisible(false);
 		terminal.applyBackgroundColor(Color.BLACK);
 		terminal.clearScreen();
 		
-		
 		playLevel(levelPath + levels[0] + levelSuffix,terminal);
-		
+
 		terminal.exitPrivateMode();
 	}
 	
