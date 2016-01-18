@@ -19,14 +19,25 @@ import objects.StaticGameObject;
 import objects.StaticTrap;
 import objects.Wall;
 import main.Main;
-import main.T;
 
 import com.googlecode.lanterna.input.Key;
 import com.googlecode.lanterna.input.Key.Kind;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
+
+/**
+ * TODO
+ * @author jakobunfried
+ *
+ */
 public class Level {
+	
+	//###  APPEARANCE (texts and colours)
+	private final static Color 	menuTextColor = Color.WHITE,
+								menuBgColor = Color.BLUE,
+								wonColor = Color.GREEN,
+								lostColor = Color.RED;
 	
 	private final static String[] menuMessage = 
 		{	"",
@@ -90,40 +101,63 @@ public class Level {
 				"",
 				""};
 	
+	//These TextBoxes are menus or messages that can be displayed
 	private TextBox menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox;
+	//The scoreboard displayes lives, key and levelscore at the bottom of the display
 	private ScoreBoard scoreBoard;
+	//elements of textBoxes will be unprinted from screen, when the game continues
 	private LevelOverlay[] textBoxes = {menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox};
 	
-	private final static int scoreBoardHeight = 5;
-	
-	private final static Color 	menuTextColor = Color.WHITE,
-								menuBgColor = Color.BLUE,
-								wonColor = Color.GREEN,
-								lostColor = Color.RED;
-	
+	//Editable path and suffix for savegames
 	private static final String saveGamePath = "saves/",
 								saveGameSuffix = ".properties";
 	
+	//The terminal will be initialized with a swing terminal.
 	private Terminal terminal;
 	
-	private StaticGameObject[][] objects;
+	private StaticGameObject[][] staticObjects;
+	
+	//The path that this Level was loadad from and can be reset from (with path + suffix!)
 	private String sourcePath;
+
 	private Player player = null;
 	private Vector<DynamicTrap> dynTraps = new Vector<DynamicTrap>();
 	
+	
 	private int levelWidth, levelHeight;
-	private int windowWidth, windowHeight, windowPositionX, windowPositionY;
+	
+	//the window can be smaller than the level!
+	private int windowWidth, windowHeight;
+	
+	//The Position of the topmost, leftmost position of the WINDOW, relative o the LEVEL
+	private int windowPositionX, windowPositionY;
+	
+	//In Menus the Level will stop moving. dynamic traps dont move, the player cant move
 	private boolean isFrozen = false;
+	
+	//true if the corresponding menu is active. only one can be active at a time
 	private boolean menu = false,
 					saveMenu = false,
 					loadMenu = false;
+	
+	//true if this level was won
 	private boolean isWon = false;
 	
+	/**
+	 * Loads the level from the specified sourcefile and displays it in the terminal
+	 * @param terminal the terminal to display the level in
+	 * @param path the path of the sourcefile
+	 */
 	public Level(Terminal terminal, String path){
 		init(terminal,path);
 		printWholeLevel();
 	}
 	
+	/**
+	 * initisalises the fields. is used in constructor and on resetting
+	 * @param terminal
+	 * @param path the path of the sourcefile
+	 */
 	private void init(Terminal terminal, String path){
 		this.terminal = terminal;
 		sourcePath = path;
@@ -149,33 +183,34 @@ public class Level {
 		 */
 			levelWidth = Integer.parseInt(obj.getProperty("Width"));
 			levelHeight = Integer.parseInt(obj.getProperty("Height"));
-			objects = new StaticGameObject[levelWidth][levelHeight];
+			staticObjects = new StaticGameObject[levelWidth][levelHeight];
 			dynTraps = new Vector<DynamicTrap>();
-			for(int x = 0 ; x < objects.length ; x++){
-				for(int y = 0 ; y < objects[x].length ; y++){
+			for(int x = 0 ; x < staticObjects.length ; x++){
+				for(int y = 0 ; y < staticObjects[x].length ; y++){
 					//(1)
 					try {
 						switch(Integer.parseInt(obj.getProperty(x + "," + y))){
-						case 0:	objects[x][y] = new Wall(x,y,terminal,this,x==0 || y==0 || x==levelWidth-1 || y==levelHeight-1);
+						case 0:	staticObjects[x][y] = new Wall(x,y,terminal,this,x==0 || y==0 || x==levelWidth-1 || y==levelHeight-1);
 								break;
-						case 1: objects[x][y] = new Entry(x,y,terminal,this);
+						case 1: staticObjects[x][y] = new Entry(x,y,terminal,this);
 								player = new Player(x,y,terminal,this); 
 								break;
-						case 2: objects[x][y] = new Exit(x,y,terminal,this);			
+						case 2: staticObjects[x][y] = new Exit(x,y,terminal,this);			
 								break;
-						case 3: objects[x][y] = new StaticTrap(x,y,terminal,this);	
+						case 3: staticObjects[x][y] = new StaticTrap(x,y,terminal,this);	
 								break;
-						case 4: objects[x][y] = new Empty(x,y,terminal,this);
+						case 4: staticObjects[x][y] = new Empty(x,y,terminal,this);
 								dynTraps.add(new DynamicTrap(x,y,terminal,this));	
 								break;
-						case 5: objects[x][y] = new ExitKey(x,y,terminal,this);
+						case 5: staticObjects[x][y] = new ExitKey(x,y,terminal,this);
 								break;
-						case 6: objects[x][y] = new Empty(x,y,terminal,this);
+						case 6: staticObjects[x][y] = new Empty(x,y,terminal,this);
 								break;
+						default:staticObjects[x][y] = new Empty(x,y,terminal,this);
 						}
 					}
 					catch(NumberFormatException e){
-						objects[x][y] = new Empty(x,y,terminal,this);
+						staticObjects[x][y] = new Empty(x,y,terminal,this);
 					}
 				}
 			}
@@ -183,7 +218,7 @@ public class Level {
 			
 		//Fenstergroesse setzen und Fenster um Player zentrieren
 			windowWidth = terminal.getTerminalSize().getColumns();
-			windowHeight = terminal.getTerminalSize().getRows() - scoreBoardHeight; 
+			windowHeight = terminal.getTerminalSize().getRows() - scoreBoard.getHeight(); 
 			windowPositionX = player.getX() - windowWidth/2;
 			windowPositionY = player.getY() - windowHeight/2;
 			if(windowPositionX < 0 ) windowPositionX = 0;
@@ -201,10 +236,17 @@ public class Level {
 			scoreBoard = new ScoreBoard(terminal);
 	}
 
+	/**
+	 * returns the StaticGameObject at a specified location.
+	 * This is not effected by any DynamicTrap or Player at the same location
+	 * @param x the x-coordinate relative to the LEVEL
+	 * @param y the y-coordinate relative to the LEVEL
+	 * @return the StaticGameObject at the specified location
+	 */
 	public StaticGameObject getObjectAt(int x , int y){
 		if(x<0 || x >= levelWidth || y<0 || y >= levelHeight)
 			return null;
-		return objects[x][y];
+		return staticObjects[x][y];
 	}
 	
 	public int getWidth(){
@@ -215,22 +257,41 @@ public class Level {
 		return levelHeight;
 	}
 	
+	/**
+	 * 
+	 * @return the x-position of the top-left corner of the terminal-window relative to Level
+	 */
 	public int getWindowX(){
 		return windowPositionX;
 	}
 	
+	/**
+	 * 
+	 * @return the y-position of the top-left corner of the terminal-window relative to Level
+	 */
 	public int getWindowY(){
 		return windowPositionY;
 	}
 	
+	/**
+	 * 
+	 * @return the width of the terminal-window
+	 */
 	public int getWindowWidth(){
 		return windowWidth;
 	}
 	
+	/**
+	 * 
+	 * @return the height of the terminal-window
+	 */
 	public int getWindowHeight(){
 		return windowHeight;
 	}
 
+	/**
+	 * prints the whole level (StaticGameObjects, DynamicTraps, Player and ScoreBoard) to terminal
+	 */
 	public void printWholeLevel(){
 		terminal.clearScreen();
 		//Labyrinth
@@ -238,7 +299,7 @@ public class Level {
 				if(x >= levelWidth) break;
 				for(int y = windowPositionY ; y < windowPositionY + windowHeight; y++){
 					if(y >= levelHeight) break;
-					objects[x][y].printInTerminal();
+					staticObjects[x][y].printInTerminal();
 				}
 			}
 			
@@ -258,6 +319,9 @@ public class Level {
 		}
 	}
 	
+	/**
+	 * prints the howToPlay Mesage to terminal
+	 */
 	public void printHowToPlay() {
 		howToPlayBox.print();
 	}
@@ -270,8 +334,11 @@ public class Level {
 		return dynTraps;
 	}
 	
+	/**
+	 * ends the level. the level gets frozen. and either winBox or lostBox is printed
+	 * @param won the levels result (true if won, false if lost)
+	 */
 	public void endLevel(boolean won){
-		T.p("ending level " + won);
 		isWon = won;   
 		setFrozen(true);
 		for(DynamicTrap trap : dynTraps){
@@ -289,7 +356,7 @@ public class Level {
 		return terminal;
 	}
 	
-	/**
+	/** TODO dont do this
 	 * Operation codes:
 	 * 0 Default (do nothing)
 	 * 1 Quit Game
@@ -372,9 +439,13 @@ public class Level {
 		return 0;
 	}
 	
+	/**
+	 * saves information about the  state of this level to a savegame slot in a .properties file
+	 * this file does not contain information about the StaticGameObjects, it only contains
+	 * a reference to a sourcefile, from which the level can be recreated
+	 * @param slot
+	 */
 	public void save(int slot){
-		//TODO create slotX.properties if not existing
-		
 		//edit saveGame
 		Properties saveGame = new Properties();
 		
@@ -412,7 +483,7 @@ public class Level {
 	}
 	
 	/**
-	 * loads from savegame
+	 * loads level from savegame file at specified slot
 	 * @param slot
 	 * @param terminal
 	 */
@@ -471,6 +542,9 @@ public class Level {
 		return isFrozen;
 	}
 
+	/**
+	 * centers the terminal-window around the player along the x-axis
+	 */
 	public void reCenterX() {
 		windowPositionX = player.getX() - windowWidth/2;
 		if(windowPositionX < 0 ) windowPositionX = 0;
@@ -479,6 +553,9 @@ public class Level {
 		printWholeLevel();
 	}
 
+	/**
+	 * centers the terminal-window around the player along the y-axis
+	 */
 	public void reCenterY() {
 		windowPositionY = player.getY() - windowHeight/2;
 		if(windowPositionY < 0 ) windowPositionY = 0;
@@ -495,6 +572,9 @@ public class Level {
 		menuBox.print();
 	}
 	
+	/**
+	 * continues level after exiting a menu etc.
+	 */
 	public void continueLevel(){
 		setFrozen(false);
 		menu = false;
@@ -520,7 +600,8 @@ public class Level {
 	}
 
 	/**
-	 * resets the level
+	 * puts the level in the same state, a new level with the same terminal, 
+	 * loaded from the same source file would be in
 	 */
 	public void reset() {
 		init(terminal, sourcePath);
@@ -533,6 +614,10 @@ public class Level {
 		isFrozen = a;
 	}
 
+	/**
+	 * updates and reprints the scoreboard
+	 * is used e.g. on live-loss
+	 */
 	public void updateScoreBoard() {
 		scoreBoard.update(this);
 	}

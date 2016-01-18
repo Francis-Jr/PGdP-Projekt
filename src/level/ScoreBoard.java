@@ -88,6 +88,10 @@ public class ScoreBoard{
 		levelScoreBox.reprintText();
 	}
 	
+	public int getHeight(){
+		return scoreBoardHeight;
+	}
+	
 	private String[] getHeartText(Player player){
 		String returnString =  " ";
 		for(int n = 0 ; n < player.getLives() ; n++){

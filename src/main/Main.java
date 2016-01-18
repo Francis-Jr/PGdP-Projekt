@@ -9,19 +9,14 @@ import com.googlecode.lanterna.input.Key.Kind;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
-/*
- *  Mindestanforderungen:
- *  - Level einlesen und verwenden
- *  - Menu über Esc (fortsetzen, laden, speichern, beenden)
- *  - Leben
- *  - Hindernisse (statisch, dynamisch)
- *  
- *  
+/**
+ * TODO
+ * @author jakobunfried
+ *
  */
-
-
 public class Main {
 	
+	//TODO here we workin
 	private static final long COMPUTE_INTERVALL = (long) (7e7);
 	private static final String levelPath = "levels/",
 								levelSuffix = ".properties";
@@ -193,6 +188,10 @@ public class Main {
 		return levels[levelsWon % levels.length];
 	}
 
+	/**
+	 * computes the internal delta value.
+	 * delta is the duration in nanosecond since the last computation cycle
+	 */
 	private static void computeDelta() {
 		delta = System.nanoTime() - last;
 		last = System.nanoTime();
