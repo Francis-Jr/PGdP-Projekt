@@ -6,10 +6,15 @@ import level.Level;
 
 import com.googlecode.lanterna.terminal.Terminal;
 
+/**
+ * Project Labyrinth (PGdP 1)
+ * WS15/16 TUM
+ * <p>
+ * An object that can move around a level and hurts the player on contact
+ * @version 19.01.2016
+ * @author junfried
+ */
 public class DynamicTrap extends MovingGameObject{
-
-	private int lastDirection = (int) Math.floor( 4 * Math.random() );
-	//Direction code:    0 = UP   ,   1 = RIGHT   ,   2 = DOWN   ,   3 = LEFT
 	
 	public DynamicTrap(int x, int y, Terminal term, Level lv) {
 		this.x = x;
@@ -58,7 +63,7 @@ public class DynamicTrap extends MovingGameObject{
 
 	@Override
 	public boolean hasKey() {
-		return false;
+		return false; //traps dont have keys.
 	}
 
 	@Override
@@ -77,11 +82,11 @@ public class DynamicTrap extends MovingGameObject{
 		//do nothing
 	}
 
+	/**
+	 * moves the DynamicObject to a random direction
+	 */
 	public void move() {
-		
-		//TODO KI???
-		
-		int direction = 0; //0 UP   1 RIGHT   2 DOWN   3 LEFT
+		int direction = 0; //0 UP   1 RIGHT   2 DOWN   3 LEFT    4 NoMovePossible
 		
 		//decide on direction
 			Vector<Integer> possibleDirections = new Vector<>();
@@ -109,11 +114,19 @@ public class DynamicTrap extends MovingGameObject{
 		level.getObjectAt(x, y).onContact(this);
 	}
 
+	/**
+	 * returns a random Element of a given Integer Vector
+	 * @param a
+	 * @return
+	 */
 	private int pickRandom(Vector<Integer> a) {
 		if(a.size() == 0) return 4;
 		return a.get((int) Math.floor((Math.random() * a.size())));
 	}
 
+	/**
+	 * prints the DynamicTrap to the Terminal
+	 */
 	@Override
 	public void printInTerminal() {
 		if(level.isFrozen()) return;
@@ -127,6 +140,10 @@ public class DynamicTrap extends MovingGameObject{
 		terminal.putCharacter(getChar());
 	}
 
+	/**
+	 * unprints the DynamicTrap. this happens by printing the underlying StaticGameObject
+	 * this is used before moving.
+	 */
 	@Override
 	public void unprint() {
 		if(level.isFrozen()) return;
@@ -140,6 +157,9 @@ public class DynamicTrap extends MovingGameObject{
 		terminal.putCharacter(level.getObjectAt(x, y).getChar());
 	}
 
+	/**
+	 * Returns whether or not this trap is at the same position as any other trap in a given DynamicTrap Vector.
+	 */
 	@Override
 	public boolean isOnDynamicTrap(Vector<DynamicTrap> dynTraps) {
 		for(DynamicTrap trap : dynTraps){

@@ -3,7 +3,15 @@ package level;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
-public class TextBox implements LevelOverlay{
+/**
+ * Project Labyrinth (PGdP 1)
+ * WS15/16 TUM
+ * <p>
+ * TODO
+ * @version 19.01.2016
+ * @author junfried
+ */
+public class TextBox{
 
 	private final static char	frameVertical = '\u2502',
 								frameHorizontal = '\u2500',

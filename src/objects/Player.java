@@ -3,11 +3,18 @@ package objects;
 import java.util.Vector;
 
 import level.Level;
-import main.T;
 
 import com.googlecode.lanterna.terminal.Terminal;
-import com.googlecode.lanterna.terminal.Terminal.Color;
 
+/**
+ * Project Labyrinth (PGdP 1)
+ * WS15/16 TUM
+ * <p>
+ * a player that can move through the labyrinth
+ * there should only be one player in a level
+ * @version 19.01.2016
+ * @author junfried
+ */
 public class Player extends MovingGameObject {
 
 	private static final int MAX_LIVES = 5;
@@ -38,6 +45,13 @@ public class Player extends MovingGameObject {
 		canWalkDefault = true;
 	}
 
+	/**
+	 * moves the player in the specified direction
+	 * this mehtod includes eventual recentering the screen, 
+	 * if the player reaches the border of the screen and interaction with 
+	 * StaticGameObjects, but not printing
+	 * @param direction 0=Up , 1=Right , 2=Down , 3=Left
+	 */
 	public void move(int direction){
 		switch(direction){
 		case 0: 
@@ -69,6 +83,9 @@ public class Player extends MovingGameObject {
 		level.getObjectAt(x, y).onContact(this);
 	}
 	
+	/**
+	 * @return whether or not the Player can walk the field at a specified location
+	 */
 	@Override
 	public boolean canWalk(int newX, int newY) {
 		if (newX < 0 || newY < 0 || newX >= level.getWidth() || newY >= level.getHeight())
@@ -91,16 +108,25 @@ public class Player extends MovingGameObject {
 		return canWalkDefault;
 	}
 
+	/**
+	 * @return whether or not the Player has a key
+	 */
 	@Override
 	public boolean hasKey() {
 		return hasKey;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void win() {
 		level.endLevel(true);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean tryGiveKey() {
 		hasKey = true;
@@ -108,6 +134,9 @@ public class Player extends MovingGameObject {
 		return true;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void hurt(int damage) {
 		lives -= damage;
@@ -120,10 +149,16 @@ public class Player extends MovingGameObject {
 		}
 	}
 
+	/**
+	 * @return the number of lives left
+	 */
 	public int getLives(){
 		return lives;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void printInTerminal() {
 		if(x < level.getWindowX() || y < level.getWindowY() || 
@@ -136,6 +171,9 @@ public class Player extends MovingGameObject {
 		terminal.putCharacter(charRepresentation);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void unprint() {
 		if(x < level.getWindowX() || y < level.getWindowY() || 
@@ -148,6 +186,9 @@ public class Player extends MovingGameObject {
 		terminal.putCharacter(level.getObjectAt(x, y).getChar());
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isOnDynamicTrap(Vector<DynamicTrap> dynTraps) {
 		for(DynamicTrap trap : dynTraps){
@@ -158,14 +199,21 @@ public class Player extends MovingGameObject {
 		return false;
 	}
 
-	public void setLives(int a) {
-		lives = a;
+	/**
+	 * sets the amount of lives left to a specified value
+	 */
+	public void setLives(int newAmount) {
+		lives = newAmount;
 		if(lives <= 0){
 			lives = 1;
 			System.err.println("[ALERT] Player.setLives() tried to set lives <= 0");
 		}
 	}
 
+	/**
+	 * 
+	 * @return the maximum amount of lives possible for a Player
+	 */
 	public static int getMaxLives() {
 		return MAX_LIVES; 
 	}

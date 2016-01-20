@@ -10,9 +10,12 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
 /**
+ * Project Labyrinth (PGdP 1)
+ * WS15/16 TUM
+ * <p>
  * TODO
- * @author jakobunfried
- *
+ * @version 19.01.2016
+ * @author junfried
  */
 public class Main {
 	
@@ -121,7 +124,6 @@ public class Main {
 			 * 101-104 save to slot 1-4
 			 * 201-204 load from slot 1-4
 			 */
-			T.p("operation Code: " + T.oC(level.getOperationCode(computeKey)));
 			switch(level.getOperationCode(computeKey)){
 			case 1: 
 				System.exit(0);	

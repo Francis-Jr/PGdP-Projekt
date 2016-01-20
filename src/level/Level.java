@@ -27,9 +27,12 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
 
 
 /**
+ * Project Labyrinth (PGdP 1)
+ * WS15/16 TUM
+ * <p>
  * TODO
- * @author jakobunfried
- *
+ * @version 19.01.2016
+ * @author junfried
  */
 public class Level {
 	
@@ -106,7 +109,7 @@ public class Level {
 	//The scoreboard displayes lives, key and levelscore at the bottom of the display
 	private ScoreBoard scoreBoard;
 	//elements of textBoxes will be unprinted from screen, when the game continues
-	private LevelOverlay[] textBoxes = {menuBox, howToPlayBox, saveMenuBox, loadMenuBox, wonBox, lostBox};
+	private TextBox[] textBoxes ;
 	
 	//Editable path and suffix for savegames
 	private static final String saveGamePath = "saves/",
@@ -216,16 +219,6 @@ public class Level {
 			}
 			if(player == null) System.err.println("[ERROR] @ Level() : no entry found. no player placed.");
 			
-		//Fenstergroesse setzen und Fenster um Player zentrieren
-			windowWidth = terminal.getTerminalSize().getColumns();
-			windowHeight = terminal.getTerminalSize().getRows() - scoreBoard.getHeight(); 
-			windowPositionX = player.getX() - windowWidth/2;
-			windowPositionY = player.getY() - windowHeight/2;
-			if(windowPositionX < 0 ) windowPositionX = 0;
-			else if (windowPositionX > levelWidth - windowWidth - 1) windowPositionX = levelWidth - windowWidth - 1;
-			if(windowPositionY < 0 ) windowPositionY = 0;
-			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
-			
 		//TextBoxes initialisieren,
 			menuBox = new TextBox(menuMessage, menuTextColor, menuBgColor, terminal);
 			howToPlayBox = new TextBox(howToPlayText, menuTextColor, menuBgColor, 0 , 0 , terminal);
@@ -233,7 +226,25 @@ public class Level {
 			loadMenuBox = new TextBox(loadMenuMessage , menuTextColor, menuBgColor, terminal);
 			wonBox = new TextBox(wonMessage , menuTextColor , wonColor , terminal);
 			lostBox =  new TextBox(lostMessage , menuTextColor , lostColor , terminal);
-			scoreBoard = new ScoreBoard(terminal);
+			textBoxes = new TextBox[6];
+			textBoxes[0] = menuBox;
+			textBoxes[1] = howToPlayBox;
+			textBoxes[2] = saveMenuBox;
+			textBoxes[3] = loadMenuBox;
+			textBoxes[4] = wonBox;
+			textBoxes[5] = lostBox;
+			scoreBoard = new ScoreBoard(terminal);	
+			
+		//Fenstergroesse setzen und Fenster um Player zentrieren
+			windowWidth = terminal.getTerminalSize().getColumns();
+			windowHeight = terminal.getTerminalSize().getRows() - 
+					scoreBoard.getHeight(); 
+			windowPositionX = player.getX() - windowWidth/2;
+			windowPositionY = player.getY() - windowHeight/2;
+			if(windowPositionX < 0 ) windowPositionX = 0;
+			else if (windowPositionX > levelWidth - windowWidth - 1) windowPositionX = levelWidth - windowWidth - 1;
+			if(windowPositionY < 0 ) windowPositionY = 0;
+			else if (windowPositionY > levelHeight - windowHeight - 1) windowPositionY = levelHeight - windowHeight - 1;
 	}
 
 	/**
@@ -311,12 +322,6 @@ public class Level {
 			
 		//Scoreboard
 			scoreBoard.print(this);
-	}
-	
-	public void unPrintActiveTextBoxes(){
-		for(LevelOverlay ol : textBoxes){
-			ol.unPrint(this);
-		}
 	}
 	
 	/**
@@ -546,6 +551,7 @@ public class Level {
 	 * centers the terminal-window around the player along the x-axis
 	 */
 	public void reCenterX() {
+		//TODO dont reprint if you didnt move...
 		windowPositionX = player.getX() - windowWidth/2;
 		if(windowPositionX < 0 ) windowPositionX = 0;
 		else if (windowPositionX > levelWidth - windowWidth - 1) 
@@ -580,7 +586,9 @@ public class Level {
 		menu = false;
 		saveMenu = false;
 		loadMenu = false;
-		unPrintActiveTextBoxes();
+		for(TextBox box : textBoxes){
+			box.unPrint(this);
+		}
 	}
 
 	public void enterSaveMenu() {
