@@ -30,7 +30,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  * Project Labyrinth (PGdP 1)
  * WS15/16 TUM
  * <p>
- * TODO
+ * A class that handles everything that happens in one level
  * @version 19.01.2016
  * @author junfried
  */
@@ -49,8 +49,9 @@ public class Level {
 			"   (1) Continue Level",
 			"   (2) Save Progress",
 			"   (3) Load saved Game   ",
-			"   (4) How to play?      ",
-			"   (5) Quit",
+			"   (4) Start new Game    ",
+			"   (5) How to play?      ",
+			"   (6) Quit",
 			""
 		},
 		howToPlayText = 
@@ -59,8 +60,9 @@ public class Level {
 		"",
 		"    o Player   $ Key      ",
 		"    # Trap     + Enemy    ",
-		"    E Exit     x Wall     ",
-		"    x Levelborder         ",
+		"    E Exit     \u2588 Wall     ",
+		"   Blue Walls are at the  ",
+		"   border of the level    ",
 		"",
 		"   find a key, then get   ",
 		"  to the exit. dont die.  "
@@ -345,10 +347,11 @@ public class Level {
 	 */
 	public void endLevel(boolean won){
 		isWon = won;   
-		setFrozen(true);
+		player.printInTerminal();
 		for(DynamicTrap trap : dynTraps){
 			trap.printInTerminal();;
 		}
+		isFrozen = true;
 		if(won){
 			wonBox.print();
 		}
@@ -361,60 +364,90 @@ public class Level {
 		return terminal;
 	}
 	
-	/** TODO dont do this
-	 * Operation codes:
-	 * 0 Default (do nothing)
-	 * 1 Quit Game
-	 * 2 enter Menu
-	 * 3 leave Menu (continue Level)
-	 * 4 next Level
-	 * 5 retry Level
-	 * 6 to save Menu
-	 * 7 to load Menu
-	 * 8 How to play
-	 * 101-104 save to slot 1-4
-	 * 201-204 load from slot 1-4
+	/**
+	 * Proceses the user input given by a specified Key
 	 * @param key
-	 * @return an operation code (list see above)
 	 */
-	public int getOperationCode (Key key){
+	public void processKey (Key key){
 		Kind kind = key.getKind();
-		
 		if(menu){
 			if(kind.equals(Kind.Escape)){
-				return 3;
+				continueLevel();
 			}
 			if(kind.equals(Kind.NormalKey)){
 				switch(key.getCharacter()){
-				case '1': return 3;
-				case '2': return 6;
-				case '3': return 7;
-				case '4': return 8;
-				case '5': return 1;
+				case '1': continueLevel();
+					break;
+				case '2': enterSaveMenu();
+					break;
+				case '3': enterLoadMenu();
+					break;
+				case '4': 
+					Main.setLevelsWon(0);
+					load(terminal,Main.getNextLevelPath());
+					printWholeLevel();
+					continueLevel();
+					break;
+				case '5': printHowToPlay();
+					break;
+				case '6': System.exit(0);
+					break;
 				}
 			}
 		}
 		
 		else if(saveMenu){
 			if(kind.equals(Kind.Escape)){
-				return 2;
+				enterMenu();
 			}
 			if(kind.equals(Kind.NormalKey)){
 				switch(key.getCharacter()){
-				case '1': case '2': case '3': case '4':
-					return Integer.parseInt("" + key.getCharacter()) + 100;
+				case '1': 
+					save(1); 
+					enterMenu();
+					break;
+				case '2':
+					save(2); 
+					enterMenu();
+					break;
+				case '3':
+					save(3); 
+					enterMenu();
+					break;
+				case '4':
+					save(4); 
+					enterMenu();
+					break;
 				}
 			}
 		}
 		
 		else if(loadMenu){
 			if(kind.equals(Kind.Escape)){
-				return 2;
+				enterMenu();
 			}
 			if(kind.equals(Kind.NormalKey)){
 				switch(key.getCharacter()){
-				case '1': case '2': case '3': case '4':
-					return Integer.parseInt("" + key.getCharacter()) + 200;
+				case '1': 
+					load(1, terminal);
+					printWholeLevel();
+					continueLevel();
+					break;
+				case '2':
+					load(2,terminal);
+					printWholeLevel();
+					continueLevel();
+					break;
+				case '3':
+					load(3, terminal);
+					printWholeLevel();
+					continueLevel();
+					break;
+				case '4':
+					load(4, terminal);
+					printWholeLevel();
+					continueLevel();
+					break;
 				}
 			}
 		}
@@ -423,8 +456,25 @@ public class Level {
 		else if (isFrozen){
 			if(kind.equals(Kind.NormalKey)){
 				switch(key.getCharacter()){
-				case '1': return (isWon ? 4 : 5);
-				case '2': return 1;
+				case '1': 
+					if(isWon){
+						Main.setLevelsWon(Main.getLevelsWon()+1);
+						load(terminal,Main.getNextLevelPath());
+						printWholeLevel();
+						continueLevel();
+					}
+					else{
+						reset();
+						printWholeLevel();
+						continueLevel();
+					}
+					break;
+				case '2': 
+					Main.setLevelsWon(0);
+					load(terminal,Main.getNextLevelPath());
+					printWholeLevel();
+					enterMenu();
+					break;
 				}
 			}
 		}
@@ -432,16 +482,8 @@ public class Level {
 		//running level
 		else{ 
 			if(key.getKind().equals(Key.Kind.Escape))
-				return 2;
-			if(kind.equals(Kind.NormalKey)){
-				switch(key.getCharacter()){
-				case 'e': return 1;
-				}
-			}
+				enterMenu();
 		}
-		
-		//default
-		return 0;
 	}
 	
 	/**
@@ -551,27 +593,37 @@ public class Level {
 	 * centers the terminal-window around the player along the x-axis
 	 */
 	public void reCenterX() {
-		//TODO dont reprint if you didnt move...
+		int lastX = windowPositionX;
 		windowPositionX = player.getX() - windowWidth/2;
 		if(windowPositionX < 0 ) windowPositionX = 0;
 		else if (windowPositionX > levelWidth - windowWidth - 1) 
 			windowPositionX = levelWidth - windowWidth - 1;
-		printWholeLevel();
+		if(lastX != windowPositionX){
+			printWholeLevel();
+		}
 	}
 
 	/**
 	 * centers the terminal-window around the player along the y-axis
 	 */
 	public void reCenterY() {
+		int lastY = windowPositionY;
 		windowPositionY = player.getY() - windowHeight/2;
 		if(windowPositionY < 0 ) windowPositionY = 0;
 		else if (windowPositionY > levelHeight - windowHeight - 1) 
 			windowPositionY = levelHeight - windowHeight - 1;
-		printWholeLevel();
+		if(lastY != windowPositionY){
+			printWholeLevel();
+		}
 	}
 	
 	public void enterMenu(){
-		setFrozen(true);
+		for(TextBox box : textBoxes){
+			if(box.isActive()){
+				box.unPrint(this);
+			}
+		}
+		isFrozen = true;
 		menu = true;
 		saveMenu = false;
 		loadMenu = false;
@@ -582,17 +634,24 @@ public class Level {
 	 * continues level after exiting a menu etc.
 	 */
 	public void continueLevel(){
-		setFrozen(false);
+		isFrozen = false;
 		menu = false;
 		saveMenu = false;
 		loadMenu = false;
 		for(TextBox box : textBoxes){
-			box.unPrint(this);
+			if(box.isActive()){
+				box.unPrint(this);
+			}
 		}
 	}
 
 	public void enterSaveMenu() {
-		setFrozen(true);
+		for(TextBox box : textBoxes){
+			if(box.isActive()){
+				box.unPrint(this);
+			}
+		}
+		isFrozen = true;
 		menu = false;
 		loadMenu = false;
 		saveMenu = true;
@@ -600,7 +659,12 @@ public class Level {
 	}
 
 	public void enterLoadMenu() {
-		setFrozen(true);
+		for(TextBox box : textBoxes){
+			if(box.isActive()){
+				box.unPrint(this);
+			}
+		}
+		isFrozen = true;
 		menu = false;
 		saveMenu = false;
 		loadMenu = true;
@@ -614,12 +678,6 @@ public class Level {
 	public void reset() {
 		init(terminal, sourcePath);
 		printWholeLevel();
-	}
-	
-	private void setFrozen(boolean a){
-		if(a)
-			printWholeLevel();
-		isFrozen = a;
 	}
 
 	/**

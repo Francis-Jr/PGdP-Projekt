@@ -31,4 +31,12 @@ public class Empty extends StaticGameObject {
 	public void onContact(MovingGameObject mov) {
 		//do nothing
 	}
+	
+	public void flashColor(Color col){
+		color = col;
+	}
+	
+	public void unFlash(){
+		color = defaultBgColor;
+	}
 }

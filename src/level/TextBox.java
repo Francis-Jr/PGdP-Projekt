@@ -1,5 +1,7 @@
 package level;
 
+import objects.StaticGameObject;
+
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.Terminal.Color;
 
@@ -7,7 +9,7 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  * Project Labyrinth (PGdP 1)
  * WS15/16 TUM
  * <p>
- * TODO
+ * A rectangular, framed box with a message String that can be displayed on screen
  * @version 19.01.2016
  * @author junfried
  */
@@ -96,7 +98,13 @@ public class TextBox{
 	
 		for(int x = positionX ; x < positionX + width ; x++){
 			for(int y = positionY ; y < positionY + height ; y++){
-				level.getObjectAt(x, y).printInTerminal();
+				if(x < level.getWidth() && y < level.getHeight()){
+					level.getObjectAt(x, y).printInTerminal();
+				}
+				else
+					terminal.moveCursor(x, y);
+					terminal.applyBackgroundColor(StaticGameObject.getDefaultBgColor());
+					terminal.putCharacter(' ');
 			}
 		}
 	}

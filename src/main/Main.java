@@ -13,13 +13,14 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  * Project Labyrinth (PGdP 1)
  * WS15/16 TUM
  * <p>
- * TODO
+ * The Main class that is used to launch the game
+ * and statically count the number of completed levels
+ * 
  * @version 19.01.2016
  * @author junfried
  */
 public class Main {
 	
-	//TODO here we workin
 	private static final long COMPUTE_INTERVALL = (long) (7e7);
 	private static final String levelPath = "levels/",
 								levelSuffix = ".properties";
@@ -108,63 +109,6 @@ public class Main {
 			}
 		}
 		
-		
-		if(computeKey != null){ //Player wurde nicht bewegt, aber evlt etwas anderes gemacht
-			
-			/*
-			 * Operation codes:
-			 * 0 Default (do nothing)
-			 * 1 Quit Game
-			 * 2 enter Menu
-			 * 3 leave Menu (continue Level)
-			 * 4 next Level
-			 * 5 retry Level
-			 * 6 to save Menu
-			 * 7 to load Menu
-			 * 101-104 save to slot 1-4
-			 * 201-204 load from slot 1-4
-			 */
-			switch(level.getOperationCode(computeKey)){
-			case 1: 
-				System.exit(0);	
-				break;
-			case 2: 
-				level.enterMenu();	
-				break;
-			case 3: 
-				level.continueLevel(); 
-				break;
-			case 4: 
-				levelsWon += 1;
-				level.load(terminal, levelPath + getNextLevel() + levelSuffix);
-				level.printWholeLevel();
-				level.continueLevel();
-				break;
-			case 5: 
-				level.reset();
-				level.printWholeLevel();
-				level.continueLevel();
-				break;
-			case 6: 
-				level.enterSaveMenu();
-				break;
-			case 7:
-				level.enterLoadMenu();
-				break;
-			case 8:
-				level.printHowToPlay();
-				break;
-			case 101: case 102: case 103: case 104:
-				level.save(level.getOperationCode(computeKey)-100);
-				level.enterMenu();
-				break;
-			case 201: case 202: case 203: case 204:
-				level.load(level.getOperationCode(computeKey)-200, terminal);
-				level.continueLevel();
-				break;
-			}
-		}
-		
 		//move dynTraps
 		for(DynamicTrap trap : level.getDynamicTraps()){
 			if(!level.isFrozen()) {
@@ -179,16 +123,16 @@ public class Main {
 		}
 		
 		//print player and dyntraps
-		level.getPlayer().printInTerminal();
 		for(DynamicTrap trap : level.getDynamicTraps()){
 			trap.printInTerminal();
 		}
+		level.getPlayer().printInTerminal();
 		
+		if(computeKey!=null){//Player wurde nicht bewegt, aber evlt etwas anderes gemacht
+			level.processKey(computeKey);
+		}
 	}
 
-	private static String getNextLevel() {
-		return levels[levelsWon % levels.length];
-	}
 
 	/**
 	 * computes the internal delta value.
@@ -205,6 +149,10 @@ public class Main {
 	
 	public static void setLevelsWon(int a){
 		levelsWon = a;
+	}
+
+	public static String getNextLevelPath() {
+		return levelPath + levels[levelsWon % levels.length] + levelSuffix;
 	}
 	
 }

@@ -29,7 +29,6 @@ public class Entry extends StaticGameObject {
 
 	@Override
 	public void onContact(MovingGameObject mov) {
-		//TODO maybe an alert "this is where you came from"
+		//do nothing
 	}
-
 }

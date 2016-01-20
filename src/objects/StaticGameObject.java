@@ -86,6 +86,10 @@ public abstract class StaticGameObject {
 
 //static methods
 	
+	public static Color getDefaultBgColor(){
+		return defaultBgColor;
+	}
+	
 	public static Color getKeyColor() {
 		return keyColor;
 	}
@@ -93,4 +97,5 @@ public abstract class StaticGameObject {
 	public static char getKeyChar(){
 		return keyChar;
 	}
+
 }

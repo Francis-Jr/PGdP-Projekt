@@ -11,7 +11,8 @@ import com.googlecode.lanterna.terminal.Terminal.Color;
  * Project Labyrinth (PGdP 1)
  * WS15/16 TUM
  * <p>
- * TODO
+ * A ScoreBoard that displays the amount of lives left,
+ * whether the player has a key and the current levelScore
  * @version 19.01.2016
  * @author junfried
  */
